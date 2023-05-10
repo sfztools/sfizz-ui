@@ -12,6 +12,8 @@ on:
     branches:
       - '*'
   workflow_dispatch:
+    branches:
+      - '*'
 env:
   BUILD_TYPE: Release
 
