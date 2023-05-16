@@ -47,6 +47,7 @@ add_library(sfizz_vstgui STATIC EXCLUDE_FROM_ALL
     "${VSTGUI_BASEDIR}/vstgui/lib/cfileselector.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cfont.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cframe.cpp"
+    "${VSTGUI_BASEDIR}/vstgui/lib/cgradient.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cgradientview.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cgraphicspath.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/clayeredviewcontainer.cpp"
@@ -65,26 +66,24 @@ add_library(sfizz_vstgui STATIC EXCLUDE_FROM_ALL
     "${VSTGUI_BASEDIR}/vstgui/lib/cview.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cviewcontainer.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/cvstguitimer.cpp"
+    "${VSTGUI_BASEDIR}/vstgui/lib/events.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/genericstringlistdatabrowsersource.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/pixelbuffer.cpp"
     "${VSTGUI_BASEDIR}/vstgui/lib/vstguidebug.cpp"
-    "${VSTGUI_BASEDIR}/vstgui/lib/vstguiinit.cpp")
-
-if(${VSTGUI_VERSION} VERSION_GREATER "4.10")
-    target_sources(sfizz_vstgui PRIVATE
-        ${VSTGUI_BASEDIR}/vstgui/lib/cgradient.cpp
-        ${VSTGUI_BASEDIR}/vstgui/lib/events.cpp)
-endif()
-
+    "${VSTGUI_BASEDIR}/vstgui/lib/vstguiinit.cpp"
+)
 add_library(sfizz::vstgui ALIAS sfizz_vstgui)
 
 if(WIN32)
     target_sources(sfizz_vstgui PRIVATE
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dbitmap.cpp"
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dbitmapcache.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2ddrawcontext.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dfont.cpp"
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dgradient.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dgraphicspath.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32datapackage.cpp"
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32directcomposition.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32dragging.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32factory.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32frame.cpp"
@@ -93,13 +92,11 @@ if(WIN32)
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32resourcestream.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32support.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32textedit.cpp"
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/win32viewlayer.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/winfileselector.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/winstring.cpp"
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/wintimer.cpp")
-    if(${VSTGUI_VERSION} VERSION_GREATER "4.10")
-        target_sources(sfizz_vstgui PRIVATE
-            ${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/direct2d/d2dgradient.cpp)
-    endif()
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/win32/wintimer.cpp"
+    )
 elseif(APPLE)
     target_sources(sfizz_vstgui PRIVATE
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/cocoa/autoreleasepool.mm"
@@ -119,7 +116,8 @@ elseif(APPLE)
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/macglobals.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/macstring.mm"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/mactimer.cpp"
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/quartzgraphicspath.cpp")
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/quartzgraphicspath.cpp"
+    )
 else()
     target_sources(sfizz_vstgui PRIVATE
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/cairobitmap.cpp"
@@ -134,7 +132,8 @@ else()
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/x11frame.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/x11platform.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/x11timer.cpp"
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/x11utils.cpp")
+        "${VSTGUI_BASEDIR}/vstgui/lib/platform/linux/x11utils.cpp"
+    )
 endif()
 
 target_include_directories(sfizz_vstgui PUBLIC "${VSTGUI_BASEDIR}")
@@ -148,7 +147,8 @@ if(WIN32)
             "dwrite"
             "dwmapi"
             "windowscodecs"
-            "shlwapi")
+            "shlwapi"
+        )
     endif()
 elseif(APPLE)
     target_link_libraries(sfizz_vstgui PRIVATE
@@ -161,7 +161,8 @@ elseif(APPLE)
         "${APPLE_CARBON_LIBRARY}"
         "${APPLE_AUDIOTOOLBOX_LIBRARY}"
         "${APPLE_COREAUDIO_LIBRARY}"
-        "${APPLE_COREMIDI_LIBRARY}")
+        "${APPLE_COREMIDI_LIBRARY}"
+    )
 else()
     find_package(X11 REQUIRED)
     find_package(Freetype REQUIRED)
@@ -190,7 +191,8 @@ else()
         ${CAIRO_INCLUDE_DIRS}
         ${PANGO_INCLUDE_DIRS}
         ${FONTCONFIG_INCLUDE_DIRS}
-        ${GLIB_INCLUDE_DIRS})
+        ${GLIB_INCLUDE_DIRS}
+    )
     target_link_libraries(sfizz_vstgui  PRIVATE
         ${X11_LIBRARIES}
         ${FREETYPE_LIBRARIES}
@@ -204,7 +206,8 @@ else()
         ${CAIRO_LIBRARIES}
         ${PANGO_LIBRARIES}
         ${FONTCONFIG_LIBRARIES}
-        ${GLIB_LIBRARIES})
+        ${GLIB_LIBRARIES}
+    )
     find_library(DL_LIBRARY "dl")
     if(DL_LIBRARY)
         target_link_libraries(sfizz_vstgui PRIVATE "${DL_LIBRARY}")
@@ -254,5 +257,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         "-Wno-unknown-pragmas"
         "-Wno-unused-function"
         "-Wno-unused-parameter"
-        "-Wno-unused-variable")
+        "-Wno-unused-variable"
+    )
 endif()

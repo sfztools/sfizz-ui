@@ -32,6 +32,11 @@ option_ex(SFIZZ_VST                "Enable VST plug-in build" ON)
 
 set(MIDI_CC_MAX 512 CACHE STRING "Maximum amount of Control Change Messages")
 
+# Set Windows compatibility level to 10 required by VSTGUI
+if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 include(SfizzConfig) # Re-used for this project
 include(BundleDylibs)
 
