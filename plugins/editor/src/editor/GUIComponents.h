@@ -190,9 +190,10 @@ public:
         const CRect& size,
         IControlListener* listener,
         int32_t tag,
+        CCoord heightOfOneImage,
         CBitmap* background,
         const CPoint& offset = CPoint (0, 0))
-    : CKickButton(size, listener, tag, background, offset)
+    : CKickButton(size, listener, tag, heightOfOneImage, background, offset)
     {}
 
     CMouseEventResult onMouseEntered(CPoint&, const CButtonState&) override;

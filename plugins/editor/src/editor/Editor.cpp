@@ -792,7 +792,7 @@ void Editor::Impl::createFrameContents()
 #endif
         auto createAboutButton = [this, &backgroundAbout](
                 const CRect& bounds, int tag, const char*, CHoriTxtAlign, int) {
-            SHoverButton* btn = new SHoverButton(bounds, this, tag, backgroundAbout);
+            SHoverButton* btn = new SHoverButton(bounds, this, tag, 60, backgroundAbout);
             btn->OnHoverEnter = [this, btn]() { buttonHoverEnter(btn, "About sfizz..."); };
             btn->OnHoverLeave = [this, btn]() { buttonHoverLeave(btn); };
             return btn;
