@@ -10,6 +10,7 @@
 #include "SfizzVstIDs.h"
 #include "plugin/InstrumentDescription.h"
 #include "base/source/fstreamer.h"
+#include "base/source/fstring.h"
 #include "base/source/updatehandler.h"
 #include <absl/strings/match.h>
 #include <ghc/fs_std.hpp>

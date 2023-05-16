@@ -17,6 +17,7 @@
 #if !defined(__APPLE__) && !defined(_WIN32)
 #include "X11RunLoop.h"
 #endif
+#include "base/source/fstring.h"
 #include <ghc/fs_std.hpp>
 #include <atomic>
 
