@@ -102,9 +102,6 @@ if(WIN32)
     endif()
 elseif(APPLE)
     target_sources(sfizz_vstgui PRIVATE
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/carbon/hiviewframe.cpp"
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/carbon/hiviewoptionmenu.cpp"
-        "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/carbon/hiviewtextedit.cpp"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/cocoa/autoreleasepool.mm"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/cocoa/cocoahelpers.mm"
         "${VSTGUI_BASEDIR}/vstgui/lib/platform/mac/cocoa/cocoaopenglview.mm"
