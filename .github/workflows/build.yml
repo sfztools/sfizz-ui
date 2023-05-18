@@ -14,7 +14,7 @@ on:
     branches:
       - '*'
 env:
-  BUILD_TYPE: Release
+  build_type: Release
 
 jobs:
   clang_tidy:
@@ -65,7 +65,7 @@ jobs:
           -G Ninja
           -B build
           -S "$GITHUB_WORKSPACE"
-          -D CMAKE_BUILD_TYPE="$BUILD_TYPE"
+          -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_JACK=OFF
           -D SFIZZ_RENDER=OFF
@@ -79,7 +79,7 @@ jobs:
     - name: Build
       shell: bash
       working-directory: ${{ runner.workspace }}
-      run: cmake --build build --verbose -j 2
+      run: cmake --build build --config ${{ env.build_type }} --verbose -j 2
     # No custom Linux packages, build from sources or provided in distro
 
   build_for_macos:
@@ -87,7 +87,7 @@ jobs:
     name: macOS 11
     runs-on: macos-11
     env:
-      install_name: "sfizz-${{ github.ref_name }}-macos.pkg"
+      install_name: "sfizz-${{ github.ref_name }}-macos"
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -103,7 +103,7 @@ jobs:
         options=(
           -B build
           -S "$GITHUB_WORKSPACE"
-          -D CMAKE_BUILD_TYPE="$BUILD_TYPE"
+          -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_SHARED=OFF
           -D SFIZZ_AU=ON
@@ -121,7 +121,12 @@ jobs:
     - name: Build
       shell: bash
       working-directory: ${{ runner.workspace }}
-      run: cmake --build build --verbose -j 2
+      run: |
+        cmake \
+          --build build \
+          --config ${{ env.build_type }} \
+          --verbose \
+          -j 2
     - name: Package bundles
       if: ${{ github.ref_type == 'tag' }}
       shell: bash
@@ -137,59 +142,13 @@ jobs:
           --identifier "sfz.tools.sfizz" \
           --package-path "${{ runner.workspace }}/build" \
           --version 0 \
-          ${{ env.install_name }}
+          ${{ env.install_name }}.pkg
     - name: Upload
       if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: macOS package
-        path: ${{ runner.workspace }}/build/${{ env.install_name }}
-
-  build_for_mod:
-    if: ${{ false }} # DISABLED: Old image which doesn't work with CMake > 3.5
-    name: MOD
-    runs-on: ubuntu-20.04
-    container:
-      image: jpcima/mod-plugin-builder
-      options: --user 0
-    steps:
-    - name: Set install name
-      run: echo "install_name=sfizz-$GITHUB_REF_NAME-moddevices" >> "$GITHUB_ENV"
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    - name: Fix up MOD environment
-      shell: bash
-      run: ln -sf /home/builder/mod-workdir ~/mod-workdir
-    - name: Create Build Environment
-      shell: bash
-      working-directory: ${{ runner.workspace }}
-      run: mod-plugin-builder /usr/local/bin/cmake -E make_directory build
-    - name: Configure CMake
-      shell: bash
-      working-directory: ${{ runner.workspace }}/build
-      run: |
-        mod-plugin-builder /usr/local/bin/cmake "$GITHUB_WORKSPACE" \
-          -DPROJECT_SYSTEM_PROCESSOR=armv7-a \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DSFIZZ_JACK=OFF \
-          -DSFIZZ_VST=OFF \
-          -DSFIZZ_LV2_UI=OFF
-    - name: Build
-      shell: bash
-      working-directory: ${{ runner.workspace }}/build
-      run: mod-plugin-builder /usr/local/bin/cmake --build . --config "$BUILD_TYPE" -- -j 2
-    - name: Install
-      working-directory: ${{ runner.workspace }}/build
-      shell: bash
-      run: |
-        DESTDIR="$(pwd)/$install_name" mod-plugin-builder /usr/local/bin/cmake --build . --config "$BUILD_TYPE" --target install
-        tar czvf "$install_name".tar.gz "$install_name"
-    - name: Upload
-      uses: actions/upload-artifact@v3
-      with:
-        name: MOD devices tarball
-        path: ${{ runner.workspace }}/build/${{ env.install_name }}.tar.gz
+        path: ${{ runner.workspace }}/build/${{ env.install_name }}.pkg
 
   build_for_windows:
   # if: ${{ false }}
@@ -221,14 +180,14 @@ jobs:
           -A "${{ matrix.release_arch }}" `
           -B build `
           -S "${Env:GITHUB_WORKSPACE}" `
-          -D CMAKE_BUILD_TYPE="${Env:BUILD_TYPE}" `
+          -D CMAKE_BUILD_TYPE=${{ env.build_type }} `
           -D CMAKE_CXX_STANDARD=17 `
           -D SFIZZ_LV2=ON `
           -D SFIZZ_PUREDATA=ON `
           -D SFIZZ_VST=ON `
     - name: Build
       working-directory: ${{ runner.workspace }}
-      run: cmake --build build -j 2
+      run: cmake --build build --config ${{ env.build_type }} --verbose -j 2
     - name: Install pluginval
       if: ${{ matrix.platform == 'x64' }}
       run: |
@@ -248,13 +207,41 @@ jobs:
     - name: Create installer
       if: ${{ github.ref_type == 'tag' }}
       working-directory: ${{ runner.workspace }}/build
-      run: iscc /O"." /F"${Env:install_name}" /dARCH="${{ matrix.platform }}" innosetup.iss
+      run: iscc /O"." /F"${{ env.install_name }}" /dARCH="${{ matrix.platform }}" innosetup.iss
     - name: Upload
       if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.pkg_platform }} installer
-        path: ${{ runner.workspace }}/build/${{ env.install_name }}.exe
+        path: "${{ runner.workspace }}/build/${{ env.install_name }}.exe"
+
+  archive_source_code:
+    # if: startsWith(github.ref, 'refs/tags/')
+    if: ${{ github.ref_type == 'tag' }}
+    name: Source code archive
+    runs-on: ubuntu-20.04
+    env:
+      install_name: sfizz-${{ github.ref_name }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install python3-pip
+        sudo pip install git-archive-all
+    - name: Archive source code
+      shell: bash
+      run: |
+        cd "$GITHUB_WORKSPACE" && git-archive-all \
+          --prefix="${{ env.install_name }}/" \
+          -9 "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: Source code tarball
+        path: "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
 
   build_for_mingw:
     if: ${{ false }} # DISABLED TEMPORARILY
@@ -309,7 +296,7 @@ jobs:
           -G Ninja
           -B build
           -S "$GITHUB_WORKSPACE"
-          -D CMAKE_BUILD_TYPE="$BUILD_TYPE"
+          -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D ENABLE_LTO=OFF
           -D SFIZZ_STATIC_DEPENDENCIES=ON
@@ -321,57 +308,80 @@ jobs:
     - name: Build
       shell: bash
       working-directory: ${{ runner.workspace }}
-      run: ${{ matrix.platform }}-w64-mingw32-cmake --build build -j 2
+      run: ${{ matrix.platform }}-w64-mingw32-cmake \
+        --build build --config ${{ env.build_type }} --verbose -j 2
     - name: Install
       if: ${{ github.ref_type == 'tag' }}
       working-directory: ${{ runner.workspace }}
       shell: bash
       run: |
-        DESTDIR="$(pwd)/${{ env.install_name }}" ${{ matrix.platform }}-w64-mingw32-cmake \
-          --build build --install
-        tar czvf ${{ env.install_name }}.tar.gz "${{ env.install_name }}"
+        DESTDIR="$(pwd)/${{ env.install_name }}" \
+          ${{ matrix.platform }}-w64-mingw32-cmake \
+          --build build --config ${{ env.build_type }} --target install
+        tar czvf "${{ env.install_name }}".tar.gz "${{ env.install_name }}"
     - name: Upload
       if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.pkg_platform }} MinGW tarball
-        path: ${{ runner.workspace }}/build/${{ env.install_name }}.tar.gz
+        path: "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
 
-  archive_source_code:
-    # if: startsWith(github.ref, 'refs/tags/')
-    if: ${{ github.ref_type == 'tag' }}
-    name: Source code archive
+  build_for_mod:
+    if: ${{ false }} # DISABLED: Old image which doesn't work with CMake > 3.5
+    name: MOD
     runs-on: ubuntu-20.04
+    container:
+      image: jpcima/mod-plugin-builder
+      options: --user 0
     env:
-      install_name: sfizz-${{ github.ref_name }}
+      install_name: sfizz-${{ github.ref_name }}-moddevices
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Install dependencies
+    - name: Fix up MOD environment
+      shell: bash
+      run: ln -sf /home/builder/mod-workdir ~/mod-workdir
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{ runner.workspace }}
       run: |
-        sudo apt-get update && sudo apt-get install python3-pip
-        sudo pip install git-archive-all
-    - name: Archive source code
+        mod-plugin-builder /usr/local/bin/cmake \
+          -B build \
+          -S "$GITHUB_WORKSPACE" \
+          -D PROJECT_SYSTEM_PROCESSOR=armv7-a \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D SFIZZ_JACK=OFF \
+          -D SFIZZ_VST=OFF \
+          -D SFIZZ_LV2_UI=OFF
+    - name: Build
+      shell: bash
+      working-directory: ${{ runner.workspace }}
+      run: |
+        mod-plugin-builder /usr/local/bin/cmake \
+          --build build --config ${{ env.build_type }} -- -j 2
+    - name: Install
+      working-directory: ${{ runner.workspace }}
       shell: bash
       run: |
-        cd "$GITHUB_WORKSPACE" && git-archive-all \
-          --prefix="${{ env.install_name }}/" \
-          -9 "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
+        DESTDIR="$(pwd)/${{ env.install_name }}" mod-plugin-builder \
+          /usr/local/bin/cmake --build build --config ${{ env.build_type }} --target install
+        tar czvf "${{ env.install_name }}".tar.gz "${{ env.install_name }}"
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
-        name: Source code tarball
-        path: ${{ runner.workspace }}/${{ env.install_name }}.tar.gz
+        name: MOD devices tarball
+        path: "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
 
   deploy:
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-20.04
     needs:
-      # - build_for_mod
+      # - build_for_linux
       # - build_for_mingw
       - build_for_macos
+      # - build_for_mod
       - build_for_windows
       - archive_source_code
     steps:
@@ -379,12 +389,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: macOS package
-
-      - name: MOD download
-        if: ${{ false }} # DISABLED: See comment above
-        uses: actions/download-artifact@v3
-        with:
-          name: MOD devices tarball
 
       - name: MinGW 32 download
         if: ${{ false }} # DISABLED: MinGW 32 build temporarily disabled
@@ -412,6 +416,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: Source code tarball
+
+      - name: MOD download
+        if: ${{ false }} # DISABLED: See comment above
+        uses: actions/download-artifact@v3
+        with:
+          name: MOD devices tarball
 
       - name: Display file information
         shell: bash
