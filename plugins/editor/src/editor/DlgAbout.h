@@ -33,7 +33,7 @@ public:
     void setPluginHost(const std::string& pluginHost);
 
 #if VSTGUI_MORE_THAN_4_10
-    void onKeyboardEvent (KeyboardEvent& event, CFrame* frame) override;
+    void onKeyboardEvent(KeyboardEvent&, CFrame*);
 #else
     int32_t onKeyDown(const VstKeyCode& code, CFrame* frame) override;
     int32_t onKeyUp(const VstKeyCode& code, CFrame* frame) override;

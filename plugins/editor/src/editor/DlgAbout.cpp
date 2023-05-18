@@ -236,9 +236,9 @@ CMouseEventResult SAboutDialog::onMouseDown(CPoint& where, const CButtonState& b
 }
 
 #if VSTGUI_MORE_THAN_4_10
-void SAboutDialog::onKeyboardEvent (KeyboardEvent& event, CFrame* frame)
+void SAboutDialog::onKeyboardEvent(KeyboardEvent& event, CFrame* frame)
 {
-    auto vstKeyCode = toVstKeyCode (event);
+    auto vstKeyCode = toVstKeyCode(event);
     if (event.type == EventType::KeyDown && vstKeyCode.virt == VKEY_ESCAPE)
     {
         setVisible(false);
