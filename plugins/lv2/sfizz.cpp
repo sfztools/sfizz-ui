@@ -662,7 +662,7 @@ instantiate(const LV2_Descriptor *descriptor,
     self->text_description[0] = 0;
     self->resend_description = false;
 
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
     if (self->multi_out)
         self->rms_follower.setNumOutputs(MULTI_OUTPUT_COUNT);
     else
@@ -693,7 +693,7 @@ activate(LV2_Handle instance)
     sfizz_set_samples_per_block(self->synth, self->max_block_size);
     sfizz_set_sample_rate(self->synth, self->sample_rate);
     self->must_update_midnam.store(1);
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
     self->rms_follower.init(self->sample_rate);
 #endif
 }
@@ -761,7 +761,7 @@ sfizz_lv2_send_controller(sfizz_plugin_t *self, LV2_URID verb_uri, unsigned cc, 
         lv2_atom_forge_pop(forge, &frame);
 }
 
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
 static void
 sfizz_lv2_send_levels(sfizz_plugin_t *self, const float* levels, uint32_t num_levels)
 {
@@ -890,7 +890,7 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
 
 // Note(jpc) CC must be mapped by host, not handled here.
 //           See LV2 midi:binding.
-#if defined(SFIZZ_LV2_PSA)
+#if defined(PLUGIN_LV2_PSA)
             switch (cc)
             {
             default:
@@ -1276,7 +1276,7 @@ run(LV2_Handle instance, uint32_t sample_count)
 
     spin_mutex_unlock(self->synth_mutex);
 
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
     if (self->ui_active)
     {
         if (self->multi_out) {

@@ -25,7 +25,7 @@ endfunction()
 
 add_pd_external(sfizz_puredata "sfizz_puredata.c")
 target_compile_definitions(sfizz_puredata PRIVATE
-    "MIDI_CC_MAX=${MIDI_CC_MAX}"
+    "MIDI_CC_COUNT=${MIDI_CC_COUNT}"
     "SFIZZ_VERSION=\"${CMAKE_PROJECT_VERSION}\"")
 target_link_libraries(sfizz_puredata PRIVATE sfizz::import sfizz::sfizz)
 
@@ -48,10 +48,10 @@ copy_puredata_resources(sfizz_puredata
 
 # Installation
 if(NOT MSVC)
-    install(DIRECTORY "${PUREDATA_BINARY_DIR}" DESTINATION "${PDPLUGIN_INSTALL_DIR}"
+    install(DIRECTORY "${PUREDATA_BINARY_DIR}" DESTINATION "${PD_PLUGIN_INSTALL_DIR}"
         COMPONENT "puredata"
         USE_SOURCE_PERMISSIONS)
     bundle_dylibs(puredata
-        "${PDPLUGIN_INSTALL_DIR}/sfizz/sfizz${PUREDATA_SUFFIX}"
+        "${PD_PLUGIN_INSTALL_DIR}/sfizz/sfizz${PUREDATA_SUFFIX}"
         COMPONENT "puredata")
 endif()

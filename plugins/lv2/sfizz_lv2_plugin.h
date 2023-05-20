@@ -7,7 +7,7 @@
 #pragma once
 
 #include "sfizz_lv2.h"
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
 #include "plugin/RMSFollower.h"
 #endif
 #include <spin_mutex.h>
@@ -155,7 +155,7 @@ struct sfizz_plugin_t
     // OSC
     uint8_t osc_temp[OSC_TEMP_SIZE] {};
 
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
     // UI
     volatile bool ui_active = false;
     RMSFollower rms_follower;

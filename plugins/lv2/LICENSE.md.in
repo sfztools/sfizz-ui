@@ -1,7 +1,7 @@
 Most of the code in the plug comes from various examples in the LV2 distribution and
 example plugins. As such, the source code of the LV2 plugin version of `sfizz` is
 distributed under the same terms as the LV2 specification, which is the ISC license.
-Check the LICENSE.md at (@LV2PLUGIN_REPOSITORY@) file for more
+Check the LICENSE.md at (@LV2_PLUGIN_REPOSITORY@) file for more
 information about the license of the source code of the `sfizz` library and its
 contributors.
 

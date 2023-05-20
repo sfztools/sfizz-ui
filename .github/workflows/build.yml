@@ -70,10 +70,10 @@ jobs:
           -D SFIZZ_JACK=OFF
           -D SFIZZ_RENDER=OFF
           -D SFIZZ_SHARED=OFF
-          -D SFIZZ_LV2=ON
-          -D SFIZZ_LV2_UI=ON
-          -D SFIZZ_PUREDATA=ON
-          -D SFIZZ_VST=ON
+          -D PLUGIN_LV2=ON
+          -D PLUGIN_LV2_UI=ON
+          -D PLUGIN_PUREDATA=ON
+          -D PLUGIN_VST3=ON
         )
         cmake "${options[@]}"
     - name: Build
@@ -106,10 +106,10 @@ jobs:
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_SHARED=OFF
-          -D SFIZZ_AU=ON
-          -D SFIZZ_LV2=ON
-          -D SFIZZ_LV2_UI=ON
-          -D SFIZZ_VST=ON
+          -D PLUGIN_AU=ON
+          -D PLUGIN_LV2=ON
+          -D PLUGIN_LV2_UI=ON
+          -D PLUGIN_VST3=ON
         )
         if [[ ${{ github.ref_type }} == 'branch' ]]; then
           options=(
@@ -182,9 +182,9 @@ jobs:
           -S "${Env:GITHUB_WORKSPACE}" `
           -D CMAKE_BUILD_TYPE=${{ env.build_type }} `
           -D CMAKE_CXX_STANDARD=17 `
-          -D SFIZZ_LV2=ON `
-          -D SFIZZ_PUREDATA=ON `
-          -D SFIZZ_VST=ON `
+          -D PLUGIN_LV2=ON `
+          -D PLUGIN_PUREDATA=ON `
+          -D PLUGIN_VST3=ON `
     - name: Build
       working-directory: ${{ runner.workspace }}
       run: cmake --build build --config ${{ env.build_type }} --verbose -j 2
@@ -301,8 +301,8 @@ jobs:
           -D ENABLE_LTO=OFF
           -D SFIZZ_STATIC_DEPENDENCIES=ON
           -D SFIZZ_JACK=OFF
-          -D SFIZZ_PUREDATA=ON
-          -D SFIZZ_VST=ON
+          -D PLUGIN_PUREDATA=ON
+          -D PLUGIN_VST3=ON
         )
         ${{ matrix.platform }}-w64-mingw32-cmake "${options[@]}"
     - name: Build
@@ -353,8 +353,8 @@ jobs:
           -D PROJECT_SYSTEM_PROCESSOR=armv7-a \
           -D CMAKE_BUILD_TYPE=Release \
           -D SFIZZ_JACK=OFF \
-          -D SFIZZ_VST=OFF \
-          -D SFIZZ_LV2_UI=OFF
+          -D PLUGIN_VST3=OFF \
+          -D PLUGIN_LV2_UI=OFF
     - name: Build
       shell: bash
       working-directory: ${{ runner.workspace }}

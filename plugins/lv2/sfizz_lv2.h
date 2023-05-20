@@ -147,7 +147,7 @@ bool sfizz_lv2_fetch_description(
  */
 int sfizz_lv2_get_num_outputs(sfizz_plugin_t *self);
 
-#if defined(SFIZZ_LV2_UI)
+#if defined(PLUGIN_LV2_UI)
 void sfizz_lv2_set_ui_active(sfizz_plugin_t *self, bool ui_active);
 #endif
 
