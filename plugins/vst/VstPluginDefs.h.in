@@ -4,8 +4,8 @@
 // license. You should have receive a LICENSE.md file along with the code.
 // If not, contact the sfizz maintainers at https://github.com/sfztools/sfizz
 
-#define VSTPLUGIN_NAME "@VSTPLUGIN_NAME@"
-#define VSTPLUGIN_VENDOR "@VSTPLUGIN_VENDOR@"
-#define VSTPLUGIN_URL "@VSTPLUGIN_URL@"
-#define VSTPLUGIN_EMAIL "@VSTPLUGIN_EMAIL@"
-#define VSTPLUGIN_VERSION "@PROJECT_VERSION@"
+#define VST3_PLUGIN_NAME "@VST3_PLUGIN_NAME@"
+#define VST3_PLUGIN_VENDOR "@VST3_PLUGIN_VENDOR@"
+#define VST3_PLUGIN_URL "@VST3_PLUGIN_URL@"
+#define VST3_PLUGIN_EMAIL "@VST3_PLUGIN_EMAIL@"
+#define VST3_PLUGIN_VERSION "@PROJECT_VERSION@"

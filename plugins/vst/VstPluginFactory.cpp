@@ -15,37 +15,37 @@ class SfizzVstProcessor;
 class SfizzVstProcessorMulti;
 class SfizzVstController;
 
-BEGIN_FACTORY_DEF(VSTPLUGIN_VENDOR,
-                  VSTPLUGIN_URL,
-                  "mailto:" VSTPLUGIN_EMAIL)
+BEGIN_FACTORY_DEF(VST3_PLUGIN_VENDOR,
+                  VST3_PLUGIN_URL,
+                  "mailto:" VST3_PLUGIN_EMAIL)
 
 DEF_CLASS2 (INLINE_UID_FROM_FUID(SfizzVstProcessor_cid),
             PClassInfo::kManyInstances,
             kVstAudioEffectClass,
-            VSTPLUGIN_NAME,
+            VST3_PLUGIN_NAME,
             Vst::kDistributable,
             Vst::PlugType::kInstrumentSynth,
-            VSTPLUGIN_VERSION,
+            VST3_PLUGIN_VERSION,
             kVstVersionString,
             createInstance<SfizzVstProcessor>)
 
 DEF_CLASS2 (INLINE_UID_FROM_FUID(SfizzVstProcessorMulti_cid),
             PClassInfo::kManyInstances,
             kVstAudioEffectClass,
-            VSTPLUGIN_NAME "-multi",
+            VST3_PLUGIN_NAME "-multi",
             Vst::kDistributable,
             Vst::PlugType::kInstrumentSynth,
-            VSTPLUGIN_VERSION,
+            VST3_PLUGIN_VERSION,
             kVstVersionString,
             createInstance<SfizzVstProcessorMulti>)
 
 DEF_CLASS2 (INLINE_UID_FROM_FUID(SfizzVstController_cid),
             PClassInfo::kManyInstances,
             kVstComponentControllerClass,
-            VSTPLUGIN_NAME,
+            VST3_PLUGIN_NAME,
             0,						// not used here
             "",						// not used here
-            VSTPLUGIN_VERSION,
+            VST3_PLUGIN_VERSION,
             kVstVersionString,
             createInstance<SfizzVstController>)
 

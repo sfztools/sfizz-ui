@@ -3,7 +3,7 @@
 @prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .
 @prefix urid: <http://lv2plug.in/ns/ext/urid#> .
 
-<@LV2PLUGIN_URI@#ui>
+<@LV2_PLUGIN_URI@#ui>
     lv2:extensionData ui:idleInterface ;
     lv2:extensionData ui:showInterface ;
     lv2:requiredFeature ui:idleInterface ;

@@ -43,18 +43,18 @@ elseif(APPLE)
 else()
 endif()
 
-if((SFIZZ_LV2 AND SFIZZ_LV2_UI) OR SFIZZ_VST OR SFIZZ_AU OR SFIZZ_VST2)
+if((PLUGIN_LV2 AND PLUGIN_LV2_UI) OR PLUGIN_VST3 OR PLUGIN_AU OR PLUGIN_VST2)
     add_subdirectory(editor)
 endif()
 
-if(SFIZZ_LV2)
+if(PLUGIN_LV2)
     add_subdirectory(lv2)
 endif()
 
-if((SFIZZ_VST OR SFIZZ_AU OR SFIZZ_VST2) AND NOT (PROJECT_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc).*"))
+if((PLUGIN_VST3 OR PLUGIN_AU OR PLUGIN_VST2) AND NOT (PROJECT_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc).*"))
     add_subdirectory(vst)
 endif()
 
-if(SFIZZ_PUREDATA)
+if(PLUGIN_PUREDATA)
     add_subdirectory(puredata)
 endif()

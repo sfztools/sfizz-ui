@@ -1,3 +1,9 @@
+# SPDX-License-Identifier: BSD-2-Clause
+
+# This code is part of the sfizz library and is licensed under a BSD 2-clause
+# license. You should have receive a LICENSE.md file along with the code.
+# If not, contact the sfizz maintainers at https://github.com/sfztools/sfizz
+
 find_path(PD_INCLUDE_BASEDIR "m_pd.h" PATH_SUFFIXES "pd")
 set(PD_IMP_DEF "${PROJECT_SOURCE_DIR}/plugins/puredata/external/pd/bin/pd.def")
 
@@ -17,13 +23,13 @@ else()
 endif()
 
 if(APPLE)
-    set(PDPLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Pd" CACHE STRING
+    set(PD_PLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Pd" CACHE STRING
     "Install destination for Puredata bundle [default: $ENV{HOME}/Library/Pd]")
 elseif(MSVC)
-    set(PDPLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/Pd/extra" CACHE STRING
+    set(PD_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/Pd/extra" CACHE STRING
     "Install destination for Puredata bundle [default: ${CMAKE_INSTALL_PREFIX}/Pd/extra]")
 else()
-    set(PDPLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/pd/extra" CACHE STRING
+    set(PD_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/pd/extra" CACHE STRING
     "Install destination for Puredata bundle [default: ${CMAKE_INSTALL_PREFIX}/lib/pd/extra]")
 endif()
 

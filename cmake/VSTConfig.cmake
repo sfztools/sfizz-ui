@@ -1,18 +1,24 @@
-set(VSTPLUGIN_NAME            "sfizz")
-set(VSTPLUGIN_VENDOR          "SFZTools")
-set(VSTPLUGIN_URL             "http://sfztools.github.io/sfizz")
-set(VSTPLUGIN_EMAIL           "paul@ferrand.cc")
+# SPDX-License-Identifier: BSD-2-Clause
+
+# This code is part of the sfizz library and is licensed under a BSD 2-clause
+# license. You should have receive a LICENSE.md file along with the code.
+# If not, contact the sfizz maintainers at https://github.com/sfztools/sfizz
+
+set(VST3_PLUGIN_NAME   "${PROJECT_NAME}")
+set(VST3_PLUGIN_VENDOR "${PROJECT_AUTHOR}")
+set(VST3_PLUGIN_URL    "${PROJECT_HOMEPAGE_URL}")
+set(VST3_PLUGIN_EMAIL  "${PROJECT_EMAIL}")
 
 if(APPLE)
-    set(VSTPLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/VST3" CACHE STRING
+    set(VST3_PLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/VST3" CACHE STRING
     "Install destination for VST bundle [default: $ENV{HOME}/Library/Audio/Plug-Ins/VST3]")
-    set(AUPLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/Components" CACHE STRING
+    set(AU_PLUGIN_INSTALL_DIR "$ENV{HOME}/Library/Audio/Plug-Ins/Components" CACHE STRING
     "Install destination for AudioUnit bundle [default: $ENV{HOME}/Library/Audio/Plug-Ins/Components]")
 elseif(MSVC)
-    set(VSTPLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/vst3" CACHE STRING
+    set(VST3_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/vst3" CACHE STRING
     "Install destination for VST bundle [default: ${CMAKE_INSTALL_PREFIX}/vst3]")
 else()
-    set(VSTPLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/vst3" CACHE STRING
+    set(VST3_PLUGIN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/vst3" CACHE STRING
     "Install destination for VST bundle [default: ${CMAKE_INSTALL_PREFIX}/lib/vst3]")
 endif()
 

@@ -23,69 +23,69 @@
 midnam:interface a lv2:ExtensionData .
 midnam:update a lv2:Feature .
 
-<@LV2PLUGIN_URI@#stereo_output>
+<@LV2_PLUGIN_URI@#stereo_output>
   a pg:StereoGroup, pg:OutputGroup ;
   lv2:symbol "stereo_output" ;
   lv2:name "Stereo output",
     "Sortie stéréo"@fr ,
     "Uscita stereo"@it .
 
-<@LV2PLUGIN_URI@#config>
+<@LV2_PLUGIN_URI@#config>
   a pg:Group ;
   lv2:symbol "config" ;
   lv2:name "Configuration",
     "Configuration"@fr ,
     "Impostazioni"@it .
 
-<@LV2PLUGIN_URI@#tuning>
+<@LV2_PLUGIN_URI@#tuning>
   a pg:Group ;
   lv2:symbol "tuning" ;
   lv2:name "Tuning",
     "Accordage"@fr ,
     "Accordatura"@it .
 
-<@LV2PLUGIN_URI@#status>
+<@LV2_PLUGIN_URI@#status>
   a pg:Group ;
   lv2:symbol "status" ;
   lv2:name "status",
     "Statut"@fr .
 
-<@LV2PLUGIN_URI@:sfzfile>
+<@LV2_PLUGIN_URI@:sfzfile>
   a lv2:Parameter ;
   rdfs:label "SFZ file",
     "Fichier SFZ"@fr ,
     "File SFZ"@it ;
   rdfs:range atom:Path .
 
-<@LV2PLUGIN_URI@:tuningfile>
+<@LV2_PLUGIN_URI@:tuningfile>
   a lv2:Parameter ;
-  pg:group <@LV2PLUGIN_URI@#tuning> ;
+  pg:group <@LV2_PLUGIN_URI@#tuning> ;
   rdfs:label "Scala file",
     "Fichier Scala"@fr ,
     "File Scala"@it ;
   rdfs:range atom:Path .
 
-<@LV2PLUGIN_URI@:description>
+<@LV2_PLUGIN_URI@:description>
   a lv2:Parameter ;
   rdfs:label "Instrument description" ;
   rdfs:range atom:String .
 
-<@LV2PLUGIN_URI@>
+<@LV2_PLUGIN_URI@>
   a doap:Project, lv2:Plugin, lv2:InstrumentPlugin ;
 
-  doap:name "@LV2PLUGIN_NAME@" ;
-  doap:license <https://spdx.org/licenses/@LV2PLUGIN_SPDX_LICENSE_ID@> ;
+  doap:name "@LV2_PLUGIN_NAME@" ;
+  doap:license <https://spdx.org/licenses/@LV2_PLUGIN_SPDX_LICENSE_ID@> ;
   doap:maintainer [
-    foaf:name     "@LV2PLUGIN_AUTHOR@" ;
-    foaf:homepage <@LV2PLUGIN_URI@> ;
-    foaf:mbox     <mailto:@LV2PLUGIN_EMAIL@> ;
+    foaf:name     "@LV2_PLUGIN_AUTHOR@" ;
+    foaf:homepage <@LV2_PLUGIN_URI@> ;
+    foaf:mbox     <mailto:@LV2_PLUGIN_EMAIL@> ;
   ] ;
-  rdfs:comment "@LV2PLUGIN_COMMENT@",
+  rdfs:comment "@LV2_PLUGIN_COMMENT@",
     "Échantillonneur SFZ"@fr ,
     "Campionatore SFZ"@it ;
 
-  lv2:minorVersion @LV2PLUGIN_VERSION_MINOR@ ;
-  lv2:microVersion @LV2PLUGIN_VERSION_MICRO@ ;
+  lv2:minorVersion @LV2_PLUGIN_VERSION_MINOR@ ;
+  lv2:microVersion @LV2_PLUGIN_VERSION_MICRO@ ;
 
   lv2:requiredFeature urid:map, bufsize:boundedBlockLength, work:schedule ;
   lv2:optionalFeature lv2:hardRTCapable, opts:options, state:mapPath, state:freePath ;
@@ -97,18 +97,18 @@ midnam:update a lv2:Feature .
   opts:supportedOption param:sampleRate ;
   opts:supportedOption bufsize:maxBlockLength, bufsize:nominalBlockLength ;
 
-  @LV2PLUGIN_IF_ENABLE_UI@ui:ui <@LV2PLUGIN_URI@#ui> ;
+  @LV2_PLUGIN_IF_ENABLE_UI@ui:ui <@LV2_PLUGIN_URI@#ui> ;
 
-  patch:writable <@LV2PLUGIN_URI@:sfzfile> ,
-                 <@LV2PLUGIN_URI@:tuningfile> ;
-  patch:readable <@LV2PLUGIN_URI@:description> ;
+  patch:writable <@LV2_PLUGIN_URI@:sfzfile> ,
+                 <@LV2_PLUGIN_URI@:tuningfile> ;
+  patch:readable <@LV2_PLUGIN_URI@:description> ;
 
-  pg:mainOutput <@LV2PLUGIN_URI@#stereo_output> ;
+  pg:mainOutput <@LV2_PLUGIN_URI@#stereo_output> ;
 
   lv2:port [
     a lv2:InputPort, atom:AtomPort ;
     atom:bufferType atom:Sequence ;
-    atom:supports patch:Message, midi:MidiEvent, time:Position, <@LV2PLUGIN_URI@:OSCBlob>, <@LV2PLUGIN_URI@:Notify> ;
+    atom:supports patch:Message, midi:MidiEvent, time:Position, <@LV2_PLUGIN_URI@:OSCBlob>, <@LV2_PLUGIN_URI@:Notify> ;
     lv2:designation lv2:control ;
     lv2:index 0 ;
     lv2:symbol "control" ;
@@ -118,7 +118,7 @@ midnam:update a lv2:Feature .
   ] , [
     a lv2:OutputPort, atom:AtomPort ;
     atom:bufferType atom:Sequence ;
-    atom:supports patch:Message, <@LV2PLUGIN_URI@:OSCBlob> ;
+    atom:supports patch:Message, <@LV2_PLUGIN_URI@:OSCBlob> ;
     lv2:designation lv2:control ;
     lv2:index 1 ;
     lv2:symbol "automate" ;
@@ -132,7 +132,7 @@ midnam:update a lv2:Feature .
     lv2:name "Left Output",
       "Sortie gauche"@fr ,
       "Uscita Sinistra"@it ;
-    pg:group <@LV2PLUGIN_URI@#stereo_output> ;
+    pg:group <@LV2_PLUGIN_URI@#stereo_output> ;
     lv2:designation pg:left
   ] , [
     a lv2:AudioPort, lv2:OutputPort ;
@@ -141,7 +141,7 @@ midnam:update a lv2:Feature .
     lv2:name "Right Output",
       "Sortie droite"@fr ,
       "Uscita Destra"@it ;
-    pg:group <@LV2PLUGIN_URI@#stereo_output> ;
+    pg:group <@LV2_PLUGIN_URI@#stereo_output> ;
     lv2:designation pg:right
   ] , [
     a lv2:InputPort, lv2:ControlPort ;
@@ -159,7 +159,7 @@ midnam:update a lv2:Feature .
     lv2:name "Polyphony",
       "Polyphonie"@fr ,
       "Polifonia"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -204,7 +204,7 @@ midnam:update a lv2:Feature .
     lv2:name "Oversampling factor",
       "Facteur de suréchantillonnage"@fr ,
       "Fattore Sovracampionamento"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -239,7 +239,7 @@ midnam:update a lv2:Feature .
     lv2:name "Preload size",
       "Taille préchargée"@fr ,
       "Grandezza Precaricamento"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -294,7 +294,7 @@ midnam:update a lv2:Feature .
     lv2:name "Scala root key",
       "Tonalité de base Scala"@fr ,
       "Tonalità di base Scala"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:portProperty lv2:integer ;
     lv2:default 60 ;
     lv2:minimum 0 ;
@@ -307,7 +307,7 @@ midnam:update a lv2:Feature .
     lv2:name "Tuning frequency",
       "Fréquence d'accordage"@fr ,
       "Frequenza di accordatura"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:default 440.0 ;
     lv2:minimum 300.0 ;
     lv2:maximum 500.0 ;
@@ -319,7 +319,7 @@ midnam:update a lv2:Feature .
     lv2:name "Stretched tuning",
       "Accordage étiré"@fr ,
       "Tensione di accordatura"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:default 0.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 1.0 ;
@@ -331,7 +331,7 @@ midnam:update a lv2:Feature .
     lv2:name "Sample quality",
       "Qualité des échantillons"@fr ,
       "Qualità del campione"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 2.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 10.0
@@ -342,7 +342,7 @@ midnam:update a lv2:Feature .
     lv2:name "Oscillator quality",
       "Qualité des oscillateurs"@fr ,
       "Qualità dell'oscillatore"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 1.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 3.0
@@ -352,7 +352,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "active_voices" ;
     lv2:name "Active voices",
       "Voix utilisées"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -363,7 +363,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_curves" ;
     lv2:name "Number of curves",
       "Nombre de courbes"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -374,7 +374,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_masters" ;
     lv2:name "Number of masters",
       "Nombre de maîtres"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -385,7 +385,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_groups" ;
     lv2:name "Number of groups",
       "Nombre de groupes"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -396,7 +396,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_regions" ;
     lv2:name "Number of regions",
       "Nombre de régions"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -407,7 +407,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_samples" ;
     lv2:name "Number of samples",
       "Nombre d'échantillons"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -418,7 +418,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "freewheeling_sample_quality" ;
     lv2:name "Freewheeling Sample quality",
       "Qualité des échantillons en roue libre"@fr;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 10.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 10.0
@@ -428,7 +428,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "freewheeling_oscillator_quality" ;
     lv2:name "Freewheeling Oscillator quality",
       "Qualité des oscillateurs en roue libre"@fr ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 3.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 3.0
@@ -437,7 +437,7 @@ midnam:update a lv2:Feature .
     lv2:index 22 ;
     lv2:symbol "sustain_cancels_release" ;
     lv2:name "Sustain cancels release";
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty lv2:toggled ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -446,22 +446,22 @@ midnam:update a lv2:Feature .
 
   rdfs:seeAlso <controllers.ttl> .
 
-<@LV2PLUGIN_URI@-multi>
+<@LV2_PLUGIN_URI@-multi>
   a doap:Project, lv2:Plugin, lv2:InstrumentPlugin ;
 
-  doap:name "@LV2PLUGIN_NAME@-multi" ;
-  doap:license <https://spdx.org/licenses/@LV2PLUGIN_SPDX_LICENSE_ID@> ;
+  doap:name "@LV2_PLUGIN_NAME@-multi" ;
+  doap:license <https://spdx.org/licenses/@LV2_PLUGIN_SPDX_LICENSE_ID@> ;
   doap:maintainer [
-    foaf:name     "@LV2PLUGIN_AUTHOR@" ;
-    foaf:homepage <@LV2PLUGIN_URI@> ;
-    foaf:mbox     <mailto:@LV2PLUGIN_EMAIL@> ;
+    foaf:name     "@LV2_PLUGIN_AUTHOR@" ;
+    foaf:homepage <@LV2_PLUGIN_URI@> ;
+    foaf:mbox     <mailto:@LV2_PLUGIN_EMAIL@> ;
   ] ;
-  rdfs:comment "@LV2PLUGIN_COMMENT@",
+  rdfs:comment "@LV2_PLUGIN_COMMENT@",
     "Échantillonneur SFZ"@fr ,
     "Campionatore SFZ"@it ;
 
-  lv2:minorVersion @LV2PLUGIN_VERSION_MINOR@ ;
-  lv2:microVersion @LV2PLUGIN_VERSION_MICRO@ ;
+  lv2:minorVersion @LV2_PLUGIN_VERSION_MINOR@ ;
+  lv2:microVersion @LV2_PLUGIN_VERSION_MICRO@ ;
 
   lv2:requiredFeature urid:map, bufsize:boundedBlockLength, work:schedule ;
   lv2:optionalFeature lv2:hardRTCapable, opts:options, state:mapPath, state:freePath ;
@@ -473,18 +473,18 @@ midnam:update a lv2:Feature .
   opts:supportedOption param:sampleRate ;
   opts:supportedOption bufsize:maxBlockLength, bufsize:nominalBlockLength ;
 
-  @LV2PLUGIN_IF_ENABLE_UI@ui:ui <@LV2PLUGIN_URI@#ui> ;
+  @LV2_PLUGIN_IF_ENABLE_UI@ui:ui <@LV2_PLUGIN_URI@#ui> ;
 
-  patch:writable <@LV2PLUGIN_URI@:sfzfile> ,
-                 <@LV2PLUGIN_URI@:tuningfile> ;
-  patch:readable <@LV2PLUGIN_URI@:description> ;
+  patch:writable <@LV2_PLUGIN_URI@:sfzfile> ,
+                 <@LV2_PLUGIN_URI@:tuningfile> ;
+  patch:readable <@LV2_PLUGIN_URI@:description> ;
 
-  pg:mainOutput <@LV2PLUGIN_URI@#stereo_output> ;
+  pg:mainOutput <@LV2_PLUGIN_URI@#stereo_output> ;
 
   lv2:port [
     a lv2:InputPort, atom:AtomPort ;
     atom:bufferType atom:Sequence ;
-    atom:supports patch:Message, midi:MidiEvent, time:Position, <@LV2PLUGIN_URI@:OSCBlob>, <@LV2PLUGIN_URI@:Notify> ;
+    atom:supports patch:Message, midi:MidiEvent, time:Position, <@LV2_PLUGIN_URI@:OSCBlob>, <@LV2_PLUGIN_URI@:Notify> ;
     lv2:designation lv2:control ;
     lv2:index 0 ;
     lv2:symbol "control" ;
@@ -494,7 +494,7 @@ midnam:update a lv2:Feature .
   ] , [
     a lv2:OutputPort, atom:AtomPort ;
     atom:bufferType atom:Sequence ;
-    atom:supports patch:Message, <@LV2PLUGIN_URI@:OSCBlob> ;
+    atom:supports patch:Message, <@LV2_PLUGIN_URI@:OSCBlob> ;
     lv2:designation lv2:control ;
     lv2:index 1 ;
     lv2:symbol "automate" ;
@@ -629,7 +629,7 @@ midnam:update a lv2:Feature .
     lv2:name "Polyphony",
       "Polyphonie"@fr ,
       "Polifonia"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -674,7 +674,7 @@ midnam:update a lv2:Feature .
     lv2:name "Oversampling factor",
       "Facteur de suréchantillonnage"@fr ,
       "Fattore Sovracampionamento"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -709,7 +709,7 @@ midnam:update a lv2:Feature .
     lv2:name "Preload size",
       "Taille préchargée"@fr ,
       "Grandezza Precaricamento"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty pprop:notAutomatic ;
     lv2:portProperty pprop:expensive ;
     lv2:portProperty lv2:integer ;
@@ -764,7 +764,7 @@ midnam:update a lv2:Feature .
     lv2:name "Scala root key",
       "Tonalité de base Scala"@fr ,
       "Tonalità di base Scala"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:portProperty lv2:integer ;
     lv2:default 60 ;
     lv2:minimum 0 ;
@@ -777,7 +777,7 @@ midnam:update a lv2:Feature .
     lv2:name "Tuning frequency",
       "Fréquence d'accordage"@fr ,
       "Frequenza di accordatura"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:default 440.0 ;
     lv2:minimum 300.0 ;
     lv2:maximum 500.0 ;
@@ -789,7 +789,7 @@ midnam:update a lv2:Feature .
     lv2:name "Stretched tuning",
       "Accordage étiré"@fr ,
       "Tensione di accordatura"@it ;
-    pg:group <@LV2PLUGIN_URI@#tuning> ;
+    pg:group <@LV2_PLUGIN_URI@#tuning> ;
     lv2:default 0.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 1.0 ;
@@ -801,7 +801,7 @@ midnam:update a lv2:Feature .
     lv2:name "Sample quality",
       "Qualité des échantillons"@fr ,
       "Qualità del campione"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 2.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 10.0
@@ -812,7 +812,7 @@ midnam:update a lv2:Feature .
     lv2:name "Oscillator quality",
       "Qualité des oscillateurs"@fr ,
       "Qualità dell'oscillatore"@it ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 1.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 3.0
@@ -822,7 +822,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "active_voices" ;
     lv2:name "Active voices",
       "Voix utilisées"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -833,7 +833,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_curves" ;
     lv2:name "Number of curves",
       "Nombre de courbes"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -844,7 +844,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_masters" ;
     lv2:name "Number of masters",
       "Nombre de maîtres"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -855,7 +855,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_groups" ;
     lv2:name "Number of groups",
       "Nombre de groupes"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -866,7 +866,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_regions" ;
     lv2:name "Number of regions",
       "Nombre de régions"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -877,7 +877,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "num_samples" ;
     lv2:name "Number of samples",
       "Nombre d'échantillons"@fr ;
-    pg:group <@LV2PLUGIN_URI@#status> ;
+    pg:group <@LV2_PLUGIN_URI@#status> ;
     lv2:portProperty lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
@@ -888,7 +888,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "freewheeling_sample_quality" ;
     lv2:name "Freewheeling Sample quality",
       "Qualité des échantillons en roue libre"@fr;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 10.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 10.0
@@ -898,7 +898,7 @@ midnam:update a lv2:Feature .
     lv2:symbol "freewheeling_oscillator_quality" ;
     lv2:name "Freewheeling Oscillator quality",
       "Qualité des oscillateurs en roue libre"@fr ;
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:default 3.0 ;
     lv2:minimum 0.0 ;
     lv2:maximum 3.0
@@ -907,7 +907,7 @@ midnam:update a lv2:Feature .
     lv2:index 36 ;
     lv2:symbol "sustain_cancels_release" ;
     lv2:name "Sustain cancels release";
-    pg:group <@LV2PLUGIN_URI@#config> ;
+    pg:group <@LV2_PLUGIN_URI@#config> ;
     lv2:portProperty lv2:toggled ;
     lv2:default 0 ;
     lv2:minimum 0 ;

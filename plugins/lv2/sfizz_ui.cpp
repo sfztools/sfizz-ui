@@ -805,7 +805,7 @@ void sfizz_ui_t::uiSendValue(EditId id, const EditValue& v)
     default:
         if (editIdIsCC(id)) {
             int cc = ccForEditId(id);
-#if defined(SFIZZ_LV2_PSA)
+#if defined(PLUGIN_LV2_PSA)
             if (cc >= 0 && cc < 128) {
                 // Send MIDI message
                 uint8_t msg[3];
