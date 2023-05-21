@@ -10,7 +10,7 @@ rm -f "$svg_file".icon.*.png
 
 for size in $sizes; do
   png_file="$svg_file".icon."$size".png
-  inkscape -e "$png_file" "$svg_file" -w "$size" -h "$size"
+  inkscape -o "$png_file" "$svg_file" -w "$size" -h "$size"
   optipng "$png_file"
 done
 
