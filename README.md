@@ -1,6 +1,7 @@
 # sfizz
 
-![build](https://github.com/sfztools/sfizz/actions/workflows/build.yml/badge.svg)
+[![build actions]](https://github.com/sfztools/sfizz-ui/actions)
+[![build obs]](https://build.opensuse.org/package/show/home:sfztools:sfizz:develop/sfizz)
 
 [![Discord Badge Image]](https://discord.gg/3ArE9Mw)
 [![SFZv1 Status Image]](https://sfz.tools/sfizz/development/status/opcodes/?v=1)
@@ -9,7 +10,8 @@
 [![Cakewalk Status Image]](https://sfz.tools/sfizz/development/status/opcodes/?v=cakewalk)
 
 SFZ parser and synth c++ library, providing AU / LV2 / VST3 plugins
-and JACK standalone client, please check [our website] for more details.
+and JACK standalone client, please check [our website] for more details,
+or [our wiki] for further information.
 
 ![Screenshot](screenshot.png)
 
@@ -72,6 +74,7 @@ The sfizz library also uses in some subprojects:
 - [GLSL-Color-Spaces] by tobspr, licensed under the MIT license
 - [stb_image] by Sean Barrett, licensed as public domain or MIT license
 
+
 [Abseil]:       https://abseil.io/
 [atomic_queue]: https://github.com/max0x7ba/atomic_queue
 [benchmark]:    https://github.com/google/benchmark
@@ -94,6 +97,7 @@ The sfizz library also uses in some subprojects:
 [GLSL-Color-Spaces]: https://github.com/tobspr/GLSL-Color-Spaces
 [stb_image]:    https://github.com/nothings/stb
 [our website]:  https://sfz.tools/sfizz
+[our wiki]:     https://sfz.tools/sfizz-wiki/
 [releases]:     https://github.com/sfztools/sfizz/releases
 [Carla]:     https://kx.studio/Applications:Carla
 [Ardour]:     https://ardour.org/
@@ -103,7 +107,9 @@ The sfizz library also uses in some subprojects:
 [AppVeyor Build Status]: https://img.shields.io/appveyor/ci/sfztools/sfizz.svg?label=Windows&style=popout&logo=appveyor
 [Travis Build Status]:   https://img.shields.io/travis/com/sfztools/sfizz.svg?label=Linux&style=popout&logo=travis
 [Discord Badge Image]:   https://img.shields.io/discord/587748534321807416?label=discord&logo=discord
-[OBS]: https://software.opensuse.org//download.html?project=home%3Asfztools%3Asfizz&package=sfizz
+[build actions]:         https://github.com/sfztools/sfizz-ui/actions/workflows/build.yml/badge.svg?branch=develop
+[build obs]:             https://build.opensuse.org/projects/home:sfztools:sfizz:develop/packages/sfizz/badge.svg?type=default
+[OBS]:                   https://software.opensuse.org//download.html?project=home%3Asfztools%3Asfizz&package=sfizz
 [SFZv1 Status Image]:    https://sfz.tools/assets/img/sfizz/badge_sfz1.svg
 [SFZv2 Status Image]:    https://sfz.tools/assets/img/sfizz/badge_sfz2.svg
 [ARIA Status Image]:     https://sfz.tools/assets/img/sfizz/badge_aria.svg
