@@ -16,6 +16,9 @@ on:
 env:
   build_type: Release
 
+# defaults:
+# shell: pwsh on windows, bash all the rest
+# working-directory: ${{ github.workspace }}
 jobs:
   clang_tidy:
   # if: ${{ false }}
@@ -29,12 +32,12 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install clang-tidy
     - name: Run
-      run: cd "$GITHUB_WORKSPACE" && scripts/run_clang_tidy.sh
+      run: ./scripts/run_clang_tidy.sh
 
   build_for_linux:
   # if: ${{ false }}
-    name: Linux Ubuntu 20.04
-    runs-on: ubuntu-20.04
+    name: Linux Ubuntu 22.04
+    runs-on: ubuntu-22.04 # abseil (libabsl) is not available in 20.04 repository
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -57,14 +60,18 @@ jobs:
           ninja-build
         )
         sudo apt-get update && sudo apt-get install "${packages[@]}"
+    - name: Install abseil
+      if: ${{ github.ref_type == 'branch' }}
+      run: |
+        sudo apt-get install \
+          libabsl-dev \
+          libabsl20210324
     - name: Configure CMake
-      shell: bash
-      working-directory: ${{ runner.workspace }}
       run: |
         options=(
           -G Ninja
           -B build
-          -S "$GITHUB_WORKSPACE"
+          -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_JACK=OFF
@@ -75,11 +82,24 @@ jobs:
           -D PLUGIN_PUREDATA=ON
           -D PLUGIN_VST3=ON
         )
+        if [[ ${{ github.ref_type }} == 'branch' ]]; then
+          options=(
+            ${options[@]}
+            -D SFIZZ_USE_SYSTEM_ABSEIL=ON
+          )
+        fi
         cmake "${options[@]}"
+        echo "-- github.workspace: ${{ github.workspace }}"
+        echo "-- runner.workspace: ${{ runner.workspace }}"
     - name: Build
-      shell: bash
-      working-directory: ${{ runner.workspace }}
-      run: cmake --build build --config ${{ env.build_type }} --verbose -j 2
+      run: |
+        options=(
+          --build build
+          --config ${{ env.build_type }}
+          --parallel 2
+          --verbose
+        )
+        cmake "${options[@]}"
     # No custom Linux packages, build from sources or provided in distro
 
   build_for_macos:
@@ -97,12 +117,10 @@ jobs:
       if: ${{ github.ref_type == 'branch' }}
       run: brew install abseil
     - name: Configure CMake
-      shell: bash
-      working-directory: ${{ runner.workspace }}
       run: |
         options=(
           -B build
-          -S "$GITHUB_WORKSPACE"
+          -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_SHARED=OFF
@@ -118,37 +136,37 @@ jobs:
           )
         fi
         cmake "${options[@]}"
+        echo "-- runner.workspace: ${{ runner.workspace }}"
+        echo "-- github.workspace: ${{ github.workspace }}"
     - name: Build
-      shell: bash
-      working-directory: ${{ runner.workspace }}
       run: |
-        cmake \
-          --build build \
-          --config ${{ env.build_type }} \
-          --verbose \
-          -j 2
+        options=(
+          --build build
+          --config ${{ env.build_type }}
+          --parallel 2
+          --verbose
+        )
+        cmake "${options[@]}"
     - name: Package bundles
       if: ${{ github.ref_type == 'tag' }}
-      shell: bash
-      working-directory: ${{ runner.workspace }}
-      run: $GITHUB_WORKSPACE/scripts/package-osx-bundles.sh
+      run: ./scripts/package-osx-bundles.sh
     - name: Create installer
       if: ${{ github.ref_type == 'tag' }}
-      shell: bash
-      working-directory: ${{ runner.workspace }}/build
       run: |
-        productbuild \
-          --distribution $GITHUB_WORKSPACE/scripts/plugin.pkg/package.xml \
-          --identifier "sfz.tools.sfizz" \
-          --package-path "${{ runner.workspace }}/build" \
-          --version 0 \
+        options=(
+          --distribution ${{ github.workspace }}/scripts/plugin.pkg/package.xml
+          --identifier "sfz.tools.sfizz"
+          --package-path "${{ github.workspace }}"
+          --version 0
           ${{ env.install_name }}.pkg
+        )
+        productbuild "${options[@]}"
     - name: Upload
       if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: macOS package
-        path: ${{ runner.workspace }}/build/${{ env.install_name }}.pkg
+        path: "${{ github.workspace }}/${{ env.install_name }}.pkg"
 
   build_for_windows:
   # if: ${{ false }}
@@ -173,21 +191,24 @@ jobs:
       with:
         submodules: recursive
     - name: Configure CMake
-      working-directory: ${{ runner.workspace }}
       run: |
         cmake `
           -G "Visual Studio 16 2019" `
           -A "${{ matrix.release_arch }}" `
           -B build `
-          -S "${Env:GITHUB_WORKSPACE}" `
+          -S . `
           -D CMAKE_BUILD_TYPE=${{ env.build_type }} `
           -D CMAKE_CXX_STANDARD=17 `
           -D PLUGIN_LV2=ON `
           -D PLUGIN_PUREDATA=ON `
           -D PLUGIN_VST3=ON `
     - name: Build
-      working-directory: ${{ runner.workspace }}
-      run: cmake --build build --config ${{ env.build_type }} --verbose -j 2
+      run: |
+        cmake `
+          --build build `
+          --config ${{ env.build_type }} `
+          --parallel 2 `
+          --verbose `
     - name: Install pluginval
       if: ${{ matrix.platform == 'x64' }}
       run: |
@@ -202,18 +223,18 @@ jobs:
         pluginval\pluginval --version
     - name: Validate VST3
       if: ${{ matrix.platform == 'x64' }}
-      working-directory: ${{ runner.workspace }}/build
+      working-directory: ${{ github.workspace }}/build
       run: pluginval --validate-in-process --validate sfizz.vst3
     - name: Create installer
       if: ${{ github.ref_type == 'tag' }}
-      working-directory: ${{ runner.workspace }}/build
+      working-directory: ${{ github.workspace }}/build
       run: iscc /O"." /F"${{ env.install_name }}" /dARCH="${{ matrix.platform }}" innosetup.iss
     - name: Upload
       if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.pkg_platform }} installer
-        path: "${{ runner.workspace }}/build/${{ env.install_name }}.exe"
+        path: "${{ github.workspace }}/build/${{ env.install_name }}.exe"
 
   archive_source_code:
     # if: startsWith(github.ref, 'refs/tags/')
@@ -232,16 +253,15 @@ jobs:
         sudo apt-get update && sudo apt-get install python3-pip
         sudo pip install git-archive-all
     - name: Archive source code
-      shell: bash
       run: |
-        cd "$GITHUB_WORKSPACE" && git-archive-all \
+        git-archive-all \
           --prefix="${{ env.install_name }}/" \
-          -9 "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
+          -9 "${{ github.workspace }}/${{ env.install_name }}.tar.gz"
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: Source code tarball
-        path: "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
+        path: "${{ github.workspace }}/${{ env.install_name }}.tar.gz"
 
   build_for_mingw:
     if: ${{ false }} # DISABLED TEMPORARILY
@@ -262,7 +282,6 @@ jobs:
       install_name: sfizz-${{ github.ref_name }}-mingw${{ matrix.bits }}
     steps:
     - name: Configure pacman repositories
-      shell: bash
       run: |
         cat >>/etc/pacman.conf <<EOF
         [multilib]
@@ -272,7 +291,6 @@ jobs:
         Server = https://github.com/jpcima/arch-mingw-w64/releases/download/repo.\$arch/
         EOF
     - name: Install dependencies
-      shell: bash
       run: |
         packages=(
           base-devel git ninja wget
@@ -284,36 +302,29 @@ jobs:
       with:
         submodules: recursive
     - name: Fix MinGW headers
-      shell: bash
       run: |
-        cp -vf "$GITHUB_WORKSPACE"/scripts/mingw_dwrite_3.h \
+        cp -vf "${{ github.workspace }}"/scripts/mingw_dwrite_3.h \
           /usr/${{ matrix.platform }}-w64-mingw32/include/dwrite_3.h
     - name: Configure CMake
-      shell: bash
-      working-directory: ${{ runner.workspace }}
       run: |
         options=(
           -G Ninja
           -B build
-          -S "$GITHUB_WORKSPACE"
+          -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
           -D CMAKE_CXX_STANDARD=17
           -D ENABLE_LTO=OFF
-          -D SFIZZ_STATIC_DEPENDENCIES=ON
+          -D SFIZZ_SNDFILE_STATIC=ON
           -D SFIZZ_JACK=OFF
           -D PLUGIN_PUREDATA=ON
           -D PLUGIN_VST3=ON
         )
         ${{ matrix.platform }}-w64-mingw32-cmake "${options[@]}"
     - name: Build
-      shell: bash
-      working-directory: ${{ runner.workspace }}
       run: ${{ matrix.platform }}-w64-mingw32-cmake \
         --build build --config ${{ env.build_type }} --verbose -j 2
     - name: Install
       if: ${{ github.ref_type == 'tag' }}
-      working-directory: ${{ runner.workspace }}
-      shell: bash
       run: |
         DESTDIR="$(pwd)/${{ env.install_name }}" \
           ${{ matrix.platform }}-w64-mingw32-cmake \
@@ -324,7 +335,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.pkg_platform }} MinGW tarball
-        path: "${{ runner.workspace }}/${{ env.install_name }}.tar.gz"
+        path: "${{ github.workspace }}/${{ env.install_name }}.tar.gz"
 
   build_for_mod:
     if: ${{ false }} # DISABLED: Old image which doesn't work with CMake > 3.5
@@ -424,7 +435,6 @@ jobs:
           name: MOD devices tarball
 
       - name: Display file information
-        shell: bash
         run: ls -lR
 
       - name: Release
