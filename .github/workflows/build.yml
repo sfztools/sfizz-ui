@@ -201,7 +201,9 @@ jobs:
           -D CMAKE_CXX_STANDARD=17 `
           -D PLUGIN_LV2=ON `
           -D PLUGIN_PUREDATA=ON `
-          -D PLUGIN_VST3=ON `
+          -D PLUGIN_VST3=ON
+        echo "-- runner.workspace: ${{ runner.workspace }}"
+        echo "-- github.workspace: ${{ github.workspace }}"
     - name: Build
       run: |
         cmake `
