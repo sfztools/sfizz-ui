@@ -2,13 +2,7 @@ if(WIN32)
     cmake_minimum_required(VERSION 3.15)
     cmake_policy(SET CMP0091 NEW)
 else()
-    # FIXME: The old JPC fork of mod-plugin-builder image used in CI requires 3.5.
-    #        The current upstream one needs a different configuration.
-    # Minimum required to use SFIZZ_USE_SYSTEM_ABSEIL is 3.11,
-    # see library/cmake/SfizzDeps.cmake at line 70.
-    # CMake 3.12 supports object libraries, can be used to share a single build
-    # between AU, VST2 and VST3 plugins; also to use project' HOMEPAGE_URL.
-    cmake_minimum_required(VERSION 3.12)
+    cmake_minimum_required(VERSION 3.13)
 endif()
 
 # The project was splitted in 2 repositories:
