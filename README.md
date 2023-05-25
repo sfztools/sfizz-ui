@@ -26,20 +26,25 @@ On any operating system, you might prefer to [build from source]!
 ## Contributing to sfizz
 
 There is actually many things anyone can do, programming-related or music-related.
-Please check out the [CONTRIBUTING](CONTRIBUTING.md) document for information about filing bug reports or feature requests, and helping the development of sfizz
+Please check out the [CONTRIBUTING] document for information about filing bug reports or feature requests,
+and helping the development of sfizz
 
 ## Donating to sfizz
 
-Sfizz and the work in the SFZ tools organization is purely driven by hobbyists who choose to use their free time to benefit this project.
-We firmly believe in the honesty and goodwill of users as a whole, and we want to promote a healthy relationship to software and to the cost of producing quality software.
+Sfizz and the work in the SFZ tools organization is purely driven by hobbyists
+who choose to use their free time to benefit this project.
+We firmly believe in the honesty and goodwill of users as a whole,
+and we want to promote a healthy relationship to software and to the cost of producing quality software.
 
 No financial returns is explicitely required from using sfizz in any shape.
-However, if you feel that sfizz produces value for you or your products, and if you find that your financial situation allows for it, we put together ways to donate to the project.
-You are never compelled to do so, the [CONTRIBUTING](CONTRIBUTING.md) file contains different ways to contribute.
+However, if you feel that sfizz produces value for you or your products,
+and if you find that your financial situation allows for it, we put together ways to donate to the project.
+You are never compelled to do so, the [CONTRIBUTING] file contains different ways to contribute.
 
 In all of sfizz's governance model, we strive to live in the open.
-Finances are no different, and we put in place a process so that the use of donations is as transparent as possible through our [Open Collective].
-We invite you to check out the [GOVERNANCE](GOVERNANCE.md) file to see how the organization is governed and how are donations handled.
+Finances are no different, and we put in place a process so that the use of donations
+is as transparent as possible through our [Open Collective].
+We invite you to check out the [GOVERNANCE] file to see how the organization is governed and how are donations handled.
 
 ## Dependencies and licenses
 
@@ -60,7 +65,8 @@ The sfizz library makes primary use of:
 - [pugixml] by Arseny Kapoulkine, licensed under the MIT license
 - [cephes] by Stephen Moshier, licensed under the BSD 3-Clause license
 - [cpuid] by Steinwurf ApS, licensed under the BSD 3-Clause license
-- [faust-libraries] by GRAME, Julius O. Smith III and Eric Tarr, licensed under the STK-4.3 license and a permissive variant of the LGPL license
+- [faust-libraries] by GRAME, Julius O. Smith III and Eric Tarr,
+  licensed under the STK-4.3 license and a permissive variant of the LGPL license
 
 The sfizz library also uses in some subprojects:
 
@@ -75,40 +81,42 @@ The sfizz library also uses in some subprojects:
 - [stb_image] by Sean Barrett, licensed as public domain or MIT license
 
 
-[Abseil]:       https://abseil.io/
-[atomic_queue]: https://github.com/max0x7ba/atomic_queue
-[benchmark]:    https://github.com/google/benchmark
-[Catch2]:       https://github.com/catchorg/Catch2
-[filesystem]:   https://github.com/gulrak/filesystem
-[Surge tuning]: https://surge-synth-team.org/tuning-library/
-[pugixml]:      https://pugixml.org/
-[cephes]:       https://www.netlib.org/cephes/
-[cpuid]:        https://github.com/steinwurf/cpuid
-[dr_libs]:      https://github.com/mackron/dr_libs
-[faust-libraries]: https://github.com/grame-cncm/faustlibraries
-[hiir]:         http://ldesoras.free.fr/prod.html#src_hiir
-[KISS FFT]:     http://kissfft.sourceforge.net/
-[JACK]:         https://github.com/jackaudio/jack2
-[cxxopts]:      https://github.com/jarro2783/cxxopts
-[fmidi]:        https://github.com/jpcima/fmidi
-[libsamplerate]: http://www.mega-nerd.com/SRC/
-[libsndfile]:   http://www.mega-nerd.com/libsndfile/
-[LV2]:          https://lv2plug.in/
-[GLSL-Color-Spaces]: https://github.com/tobspr/GLSL-Color-Spaces
-[stb_image]:    https://github.com/nothings/stb
-[our website]:  https://sfz.tools/sfizz
-[our wiki]:     https://sfz.tools/sfizz-wiki/
-[releases]:     https://github.com/sfztools/sfizz/releases
-[Carla]:     https://kx.studio/Applications:Carla
-[Ardour]:     https://ardour.org/
-[API]:     https://sfz.tools/sfizz/api/
-[Open Collective]:     https://opencollective.com/sfztools
+[CONTRIBUTING]:          CONTRIBUTING.md
+[GOVERNANCE]:            GOVERNANCE.md
+[Abseil]:                https://abseil.io/
+[atomic_queue]:          https://github.com/max0x7ba/atomic_queue/
+[benchmark]:             https://github.com/google/benchmark/
+[Catch2]:                https://github.com/catchorg/Catch2/
+[filesystem]:            https://github.com/gulrak/filesystem/
+[Surge tuning]:          https://surge-synth-team.org/tuning-library/
+[pugixml]:               https://pugixml.org/
+[cephes]:                https://www.netlib.org/cephes/
+[cpuid]:                 https://github.com/steinwurf/cpuid/
+[dr_libs]:               https://github.com/mackron/dr_libs/
+[faust-libraries]:       https://github.com/grame-cncm/faustlibraries/
+[hiir]:                  http://ldesoras.free.fr/prod.html#src_hiir
+[KISS FFT]:              http://kissfft.sourceforge.net/
+[JACK]:                  https://github.com/jackaudio/jack2/
+[cxxopts]:               https://github.com/jarro2783/cxxopts/
+[fmidi]:                 https://github.com/jpcima/fmidi/
+[libsamplerate]:         http://www.mega-nerd.com/SRC/
+[libsndfile]:            http://www.mega-nerd.com/libsndfile/
+[LV2]:                   https://lv2plug.in/
+[GLSL-Color-Spaces]:     https://github.com/tobspr/GLSL-Color-Spaces/
+[stb_image]:             https://github.com/nothings/stb/
+[our website]:           https://sfz.tools/sfizz/
+[our wiki]:              https://sfz.tools/sfizz-wiki/
+[releases]:              https://github.com/sfztools/sfizz/releases/
+[Carla]:                 https://kx.studio/Applications:Carla
+[Ardour]:                https://ardour.org/
+[API]:                   https://sfz.tools/sfizz/api/
+[Open Collective]:       https://opencollective.com/sfztools
 [build from source]:     https://sfz.tools/sfizz/development/build/
 [AppVeyor Build Status]: https://img.shields.io/appveyor/ci/sfztools/sfizz.svg?label=Windows&style=popout&logo=appveyor
 [Travis Build Status]:   https://img.shields.io/travis/com/sfztools/sfizz.svg?label=Linux&style=popout&logo=travis
 [Discord Badge Image]:   https://img.shields.io/discord/587748534321807416?label=discord&logo=discord
 [build actions]:         https://github.com/sfztools/sfizz-ui/actions/workflows/build.yml/badge.svg?branch=develop
-[build obs]:             https://build.opensuse.org/projects/home:sfztools:sfizz:develop/packages/sfizz/badge.svg?type=default
+[build obs]:             https://build.opensuse.org/projects/home:sfztools:sfizz:develop/packages/sfizz/badge.svg
 [OBS]:                   https://software.opensuse.org//download.html?project=home%3Asfztools%3Asfizz&package=sfizz
 [SFZv1 Status Image]:    https://sfz.tools/assets/img/sfizz/badge_sfz1.svg
 [SFZv2 Status Image]:    https://sfz.tools/assets/img/sfizz/badge_sfz2.svg
