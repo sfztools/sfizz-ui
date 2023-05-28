@@ -73,7 +73,6 @@ jobs:
           -B build
           -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
-          -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_JACK=OFF
           -D SFIZZ_RENDER=OFF
           -D SFIZZ_SHARED=OFF
@@ -122,7 +121,6 @@ jobs:
           -B build
           -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
-          -D CMAKE_CXX_STANDARD=17
           -D SFIZZ_SHARED=OFF
           -D PLUGIN_AU=ON
           -D PLUGIN_LV2=ON
@@ -198,7 +196,6 @@ jobs:
           -B build `
           -S . `
           -D CMAKE_BUILD_TYPE=${{ env.build_type }} `
-          -D CMAKE_CXX_STANDARD=17 `
           -D PLUGIN_LV2=ON `
           -D PLUGIN_PUREDATA=ON `
           -D PLUGIN_VST3=ON
@@ -314,7 +311,6 @@ jobs:
           -B build
           -S .
           -D CMAKE_BUILD_TYPE=${{ env.build_type }}
-          -D CMAKE_CXX_STANDARD=17
           -D ENABLE_LTO=OFF
           -D SFIZZ_SNDFILE_STATIC=ON
           -D SFIZZ_JACK=OFF

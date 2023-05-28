@@ -52,6 +52,11 @@ if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0A00)
 endif()
 
+# Override sfizz CXX standard since vstgui requires 17 anyway
+if (PLUGIN_AU OR PLUGIN_LV2_UI OR PLUGIN_VST3 OR PLUGIN_VST2)
+    set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
+endif()
+
 include(SfizzConfig) # Re-used for this project
 include(BundleDylibs)
 
