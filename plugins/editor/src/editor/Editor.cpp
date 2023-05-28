@@ -134,7 +134,7 @@ struct Editor::Impl : EditorController::Receiver,
     SValueMenu *scalaRootOctaveSlider_ = nullptr;
     CTextLabel* scalaRootKeyLabel_ = nullptr;
     SValueMenu* tuningFrequencyDropdown_ = nullptr;
-    CTextEdit* tuningFrequencyEdit_ = nullptr;
+    STextEdit* tuningFrequencyEdit_ = nullptr;
     CTextLabel* tuningFrequencyLabel_ = nullptr;
     CControl *stretchedTuningSlider_ = nullptr;
     CTextLabel* stretchedTuningLabel_ = nullptr;
@@ -1114,7 +1114,7 @@ void Editor::Impl::createFrameContents()
         };
 
         auto createTextEdit = [this, &palette] (const CRect& bounds, int tag, const char* label, CHoriTxtAlign align, int fontsize) {
-            auto* edit = new CTextEdit(bounds, this, tag, label, nullptr);
+            auto* edit = new STextEdit(bounds, this, tag, label, nullptr);
             auto font = makeOwned<CFontDesc>("Roboto", fontsize);
             edit->setFont(font);
             edit->setHoriAlign(align);

@@ -1348,3 +1348,36 @@ void SPlaceHolder::draw(CDrawContext* dc)
     dc->drawLine(bounds.getTopLeft(), bounds.getBottomRight());
     dc->drawLine(bounds.getTopRight(), bounds.getBottomLeft());
 }
+
+STextEdit::STextEdit(
+    const CRect& size,
+    IControlListener* listener,
+    int32_t tag,
+    UTF8StringPtr txt,
+    CBitmap* background,
+    const int32_t style)
+    : CTextEdit(size, listener, tag, txt, background, style)
+{
+}
+
+void STextEdit::onKeyboardEvent(KeyboardEvent &event)
+{
+    if (!platformControl || event.type != EventType::KeyDown)
+            return;
+
+    if (event.virt == VirtualKey::Escape)
+    {
+        bWasReturnPressed = false;
+        platformControl->setText (text);
+        getFrame ()->setFocusView (nullptr);
+        looseFocus ();
+        event.consumed = true;
+    }
+    else if (event.virt == VirtualKey::Return || event.virt == VirtualKey::Enter)
+    {
+        bWasReturnPressed = true;
+        getFrame ()->setFocusView (nullptr);
+        looseFocus ();
+        event.consumed = true;
+    }
+}

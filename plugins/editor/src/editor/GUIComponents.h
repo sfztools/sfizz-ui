@@ -236,6 +236,20 @@ private:
     bool inactive_ { false };
 };
 
+/// CTextEdit control that can use Enter key as Return
+class STextEdit: public CTextEdit {
+public:
+    STextEdit(
+        const CRect& size,
+        IControlListener* listener,
+        int32_t tag,
+        UTF8StringPtr txt = nullptr,
+        CBitmap* background = nullptr,
+        const int32_t style = 0
+    );
+    void onKeyboardEvent(KeyboardEvent& event) override;
+};
+
 ///
 class SStyledKnob : public CKnobBase {
 public:
