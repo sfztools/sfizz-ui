@@ -21,7 +21,7 @@ env:
 # working-directory: ${{ github.workspace }}
 jobs:
   clang_tidy:
-  # if: ${{ false }}
+    if: ${{ false }}
     name: Clang Tidy
     runs-on: ubuntu-20.04
     steps:
@@ -35,7 +35,7 @@ jobs:
       run: ./scripts/run_clang_tidy.sh
 
   build_for_linux:
-  # if: ${{ false }}
+    if: ${{ false }}
     name: Linux Ubuntu 22.04
     runs-on: ubuntu-22.04 # abseil (libabsl) is not available in 20.04 repository
     steps:
@@ -146,28 +146,29 @@ jobs:
         )
         cmake "${options[@]}"
     - name: Package bundles
-      if: ${{ github.ref_type == 'tag' }}
+    # if: ${{ github.ref_type == 'tag' }}
       run: ./scripts/package-osx-bundles.sh
     - name: Create installer
-      if: ${{ github.ref_type == 'tag' }}
+    # if: ${{ github.ref_type == 'tag' }}
+      working-directory: ${{ github.workspace }}/build
       run: |
         options=(
           --distribution ${{ github.workspace }}/scripts/plugin.pkg/package.xml
           --identifier "sfz.tools.sfizz"
-          --package-path "${{ github.workspace }}"
+          --package-path "${{ github.workspace }}/build"
           --version 0
           ${{ env.install_name }}.pkg
         )
         productbuild "${options[@]}"
     - name: Upload
-      if: ${{ github.ref_type == 'tag' }}
+    # if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
       with:
         name: macOS package
-        path: "${{ github.workspace }}/${{ env.install_name }}.pkg"
+        path: "${{ github.workspace }}/build/${{ env.install_name }}.pkg"
 
   build_for_windows:
-  # if: ${{ false }}
+    if: ${{ false }}
     name: Windows 2019
     runs-on: windows-2019
     strategy:
