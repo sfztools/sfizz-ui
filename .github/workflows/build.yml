@@ -145,6 +145,14 @@ jobs:
           --verbose
         )
         cmake "${options[@]}"
+    - name: Validate AU
+      working-directory: ${{ github.workspace }}/build
+      # Force a rescan after copy (thank you @PythonBlue), see
+      # https://gist.github.com/olilarkin/8f378d212b0a59944d84f9f47061d70f#v2-audiounits
+      run: |
+        sudo cp -r ./sfizz.component /Library/Audio/Plug-Ins/Components/
+        sudo killall -9 AudioComponentRegistrar
+        auval -v aumu samp Sfzt
     - name: Package bundles
       if: ${{ github.ref_type == 'tag' }}
       run: ./scripts/package-osx-bundles.sh
