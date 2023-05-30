@@ -42,8 +42,7 @@ option_ex(SFIZZ_USE_SYSTEM_VST3SDK "Use VST3SDK source files preinstalled on sys
 
 set(MIDI_CC_COUNT 512 CACHE STRING "Maximum amount of Control Change Messages")
 
-# TODO: VCPKG OR SNDFILE_STATIC?
-if(PLUGIN_LV2 AND SFIZZ_USE_VCPKG)
+if(PLUGIN_LV2 AND SFIZZ_SNDFILE_STATIC)
     set(LV2_PLUGIN_SPDX_LICENSE_ID "LGPL-3.0-only")
 endif()
 
