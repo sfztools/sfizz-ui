@@ -49,8 +49,6 @@ jobs:
         repository: sfztools/lv2lint
         path: lv2lint
         ref: '0.16.2'
-        token: ${{ secrets.LV2LINT_TOKEN }}
-        persist-credentials: false
     - name: Python Setup # lv2lint
       uses: actions/setup-python@v4
       with:
