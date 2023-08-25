@@ -51,6 +51,14 @@ if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0A00)
 endif()
 
+option(SFIZZ_MAC_UNIVERSAL_BINARY "Build universal binary for mac" OFF)
+
+if (APPLE)
+    if (SFIZZ_MAC_UNIVERSAL_BINARY)
+        set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+    endif()
+endif()
+
 # Override sfizz CXX standard since vstgui requires 17 anyway
 if (PLUGIN_AU OR PLUGIN_LV2_UI OR PLUGIN_VST3 OR PLUGIN_VST2)
     set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
