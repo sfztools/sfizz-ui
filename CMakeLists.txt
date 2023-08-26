@@ -21,7 +21,7 @@ set(PROJECT_AUTHOR     "SFZTools")
 set(PROJECT_EMAIL      "paul@ferrand.cc")
 
 set(LV2_PLUGIN_VERSION_MINOR 10)
-set(LV2_PLUGIN_VERSION_MICRO 3)
+set(LV2_PLUGIN_VERSION_MICRO 4)
 
 # External configuration CMake scripts
 set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};"
