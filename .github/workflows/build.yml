@@ -155,6 +155,11 @@ jobs:
             ${options[@]}
             -D SFIZZ_USE_SYSTEM_ABSEIL=ON
           )
+        else
+          options=(
+            ${options[@]}
+            -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          )
         fi
         cmake "${options[@]}"
         echo "-- runner.workspace: ${{ runner.workspace }}"
@@ -168,6 +173,7 @@ jobs:
           --verbose
         )
         cmake "${options[@]}"
+        lipo -i ./build/sfizz.component/Contents/MacOS/sfizz
     - name: Validate AU
       working-directory: ${{ github.workspace }}/build
       # Force a rescan after copy (thank you @PythonBlue), see
