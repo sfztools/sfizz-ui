@@ -6,6 +6,32 @@ This project tries to adhere to [Semantic Versioning][2].
 
 ## [Unreleased]
 
+## [1.2.2] - 2023-08-25
+
+### Added
+
+- New repository for UI/plugins. (sfztools/sfizz#1162)
+- CI: Restored the macOS universal build that was working in AppVeyor
+  (sfztools/sfizz@15628e13290e9be4e33ebf74aef286a5e3221579)
+
+### Changed
+
+- Updated VST3 SDK to v3.7.7, including our custom AU wrapper (#25)
+- Updated VSTGUI to v4.12.3 (patched), this requires Windows 10 or later
+- Updated stb_image to v2.28
+- Updated LV2 bundled library to v1.18
+- Various CMake and CI changes/fixes, also because the repository split
+  Minimum CMake version required is now 3.15 for Windows, 3.13 for other systems
+- Using linters for all type of plugins supported in CI
+
+### Fixed
+
+- Various code fixes for the newer version of VSTGUI; Windows 10 minimum required
+
+### Removed
+
+- macOS: removed DMG resources and Carbon support from VSTGUI
+
 ## [1.2.1] - 2023-04-15
 
 ### Globally
@@ -758,7 +784,8 @@ becoming a library to be used in other projects, plus a LV2 plugin.
 [1]: https://keepachangelog.com/en/1.0.0/
 [2]: https://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/sfztools/sfizz/compare/1.2.1...HEAD
+[Unreleased]: https://github.com/sfztools/sfizz/compare/1.2.2...HEAD
+[1.2.2]:  https://github.com/sfztools/sfizz/compare/1.2.1...1.2.2
 [1.2.1]:  https://github.com/sfztools/sfizz/compare/1.2.0...1.2.1
 [1.2.0]:  https://github.com/sfztools/sfizz/compare/1.1.1...1.2.0
 [1.1.1]:  https://github.com/sfztools/sfizz/compare/1.1.0...1.1.1
