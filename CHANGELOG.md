@@ -6,13 +6,15 @@ This project tries to adhere to [Semantic Versioning][2].
 
 ## [Unreleased]
 
-## [1.2.2] - 2023-08-25
+## [1.2.2] - 2023-08-27
 
 ### Added
 
 - New repository for UI/plugins. (sfztools/sfizz#1162)
 - CI: Restored the macOS universal build that was working in AppVeyor
-  (sfztools/sfizz@15628e13290e9be4e33ebf74aef286a5e3221579)
+  (sfztools/sfizz@15628e13290e9be4e33ebf74aef286a5e3221579) but sacrifice
+  WavPack assembly optimizations, see
+  <https://github.com/dbry/WavPack/issues/93>
 
 ### Changed
 
