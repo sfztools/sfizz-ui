@@ -159,7 +159,11 @@ jobs:
         else
           options=(
             ${options[@]}
+            # FIXME:
+            # Disable WavPack optimizations to let the universal build to work, see
+            # https://github.com/dbry/WavPack/issues/93
             -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            -D WAVPACK_ENABLE_ASM=OFF
           )
         fi
         cmake "${options[@]}"
