@@ -21,6 +21,7 @@ env:
 # working-directory: ${{ github.workspace }}
 jobs:
   clang_tidy:
+    if: ${{ github.ref_type == 'branch' }}
     name: Clang Tidy
     runs-on: ubuntu-20.04
     steps:
