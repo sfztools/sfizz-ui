@@ -34,7 +34,18 @@ bool SfzFileScan::locateRealFile(const fs::path& pathOrig, fs::path& pathFound)
     std::unique_lock<std::mutex> lock { mutex };
     refreshScan();
 
-    auto it = file_index_.find(keyOf(pathOrig.filename()));
+    const auto key = [&] {
+        auto path = pathOrig.string();
+        if (path.size() > 3 && path[1] == ':' && path[2] == '\\') {
+            // Assume an absolute windows path and switch anti-slashes to slashes
+            std::replace(path.begin(), path.end(), '\\', '/');
+            return keyOf(fs::path(path).filename());
+        }
+
+        return keyOf(pathOrig.filename());
+    }();
+
+    auto it = file_index_.find(key);
     if (it == file_index_.end())
         return false;
 
