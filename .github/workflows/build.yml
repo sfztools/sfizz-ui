@@ -188,10 +188,10 @@ jobs:
         sudo killall -9 AudioComponentRegistrar
         auval -v aumu samp Sfzt
     - name: Package bundles
-      # if: ${{ github.ref_type == 'tag' }}
+      if: github.ref_type == 'tag' || github.event_name == 'pull_request'
       run: ./scripts/package-osx-bundles.sh
     - name: Create installer
-      # if: ${{ github.ref_type == 'tag' }}
+      if: github.ref_type == 'tag' || github.event_name == 'pull_request'
       working-directory: ${{ github.workspace }}/build
       run: |
         options=(
@@ -203,7 +203,7 @@ jobs:
         )
         productbuild "${options[@]}"
     - name: Upload
-      # if: ${{ github.ref_type == 'tag' }}
+      if: github.ref_type == 'tag' || github.event_name == 'pull_request'
       uses: actions/upload-artifact@v3
       with:
         name: macOS package
@@ -267,11 +267,11 @@ jobs:
       working-directory: ${{ github.workspace }}/build
       run: pluginval --validate-in-process --validate sfizz.vst3
     - name: Create installer
-      # if: ${{ github.ref_type == 'tag' }}
+      if: github.ref_type == 'tag' || github.event_name == 'pull_request'
       working-directory: ${{ github.workspace }}/build
       run: iscc /O"." /F"${{ env.install_name }}" /dARCH="${{ matrix.platform }}" innosetup.iss
     - name: Upload
-      # if: ${{ github.ref_type == 'tag' }}
+      if: github.ref_type == 'tag' || github.event_name == 'pull_request'
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.pkg_platform }} installer
