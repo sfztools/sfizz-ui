@@ -269,7 +269,11 @@ jobs:
     - name: Create installer
       # if: ${{ github.ref_type == 'tag' }}
       working-directory: ${{ github.workspace }}/build
-      run: iscc /O"." /F"${{ env.install_name }}" /dARCH="${{ matrix.platform }}" innosetup.iss
+      env:
+        install_name: ${{ env.install_name }}
+      run: |
+        $stripped_name = $ENV:install_name.replace('/', '-')
+        iscc /O"." /F"$stripped_name" /dARCH="${{ matrix.platform }}" innosetup.iss
     - name: Upload
       # if: ${{ github.ref_type == 'tag' }}
       uses: actions/upload-artifact@v3
