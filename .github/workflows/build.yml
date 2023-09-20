@@ -129,16 +129,28 @@ jobs:
   build_for_macos:
     name: macOS 11
     runs-on: macos-11
-    env:
-      install_name: "sfizz-${{ github.ref_name }}-macos"
     steps:
+    - name: Update bash
+      run: brew install bash
+    - name: Set install_name
+      run: |
+        ghref=${{ github.ref_name }}
+        echo "install_name=sfizz-${ghref//'/'/'-'}-macos" >> "$GITHUB_ENV"
+    - name: Show summary
+      run: |
+        echo "install_name: ${{ env.install_name }}"
+        echo "BASH_VERSION: $BASH_VERSION"
+        system_profiler SPSoftwareDataType
+        cmake --version
+        gcc -v
+        xcodebuild -version
+    - name: Install dependencies
+      if: ${{ github.ref_type == 'branch' }}
+      run: brew install abseil
     - name: Checkout
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Install dependencies
-      if: ${{ github.ref_type == 'branch' }}
-      run: brew install abseil
     - name: Configure CMake
       run: |
         options=(
@@ -219,9 +231,14 @@ jobs:
           pkg_platform: Win64
           release_arch: x64
           bits: 64
-    env:
-      install_name: sfizz-${{ github.ref_name }}-win${{ matrix.bits }}
     steps:
+    - name: Set install name
+      run: |
+        $stripped_name="${{ github.ref_name }}".replace('/', '-')
+        echo "install_name=sfizz-$stripped_name-win${{ matrix.bits }}" >> "${env:GITHUB_ENV}"
+    - name: Show summary
+      run: |
+        echo "install_name: $env:install_name"
     - name: Checkout
       uses: actions/checkout@v3
       with:
