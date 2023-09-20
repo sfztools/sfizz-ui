@@ -12,6 +12,28 @@
 #include <cstdlib>
 #include <fstream>
 
+
+#if defined(_WIN32)
+const fs::path toPlatformAgnosticPath(std::string& filePath)
+{
+    return fs::u8path(filePath.replace(filePath.begin(), filePath.end(), '\\', '/'));
+}
+const fs::path fromPlatformAgnosticPath(const char *filePath)
+{
+    std::string p{filePath};
+    return fs::u8path(p.replace(p.begin(), p.end(), '/', '\\'));
+}
+#else
+const fs::path toPlatformAgnosticPath(std::string& filePath)
+{
+    return fs::u8path(filePath);
+}
+const fs::path fromPlatformAgnosticPath(const char *filePath)
+{
+    return fs::u8path(filePath);
+}
+#endif
+
 #if defined(_WIN32)
 #include <windows.h>
 #include <shlobj.h>

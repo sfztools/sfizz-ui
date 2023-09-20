@@ -12,6 +12,7 @@
 #include "sfizz/import/sfizz_import.h"
 #include "plugin/SfizzFileScan.h"
 #include "plugin/InstrumentDescription.h"
+#include "plugin/NativeHelpers.h"
 #include "base/source/fstreamer.h"
 #include "base/source/updatehandler.h"
 #include "pluginterfaces/vst/ivstevents.h"
@@ -178,7 +179,8 @@ tresult PLUGIN_API SfizzVstProcessor::setState(IBStream* stream)
         if (statePath->empty())
             continue;
 
-        fs::path pathOrig = fs::u8path(*statePath);
+        // save file path in platform-agnostic way. See sfizz-ui issue #95
+        fs::path pathOrig = toPlatformAgnosticPath(*statePath);
         std::error_code ec;
         if (fs::is_regular_file(pathOrig, ec))
             continue;
