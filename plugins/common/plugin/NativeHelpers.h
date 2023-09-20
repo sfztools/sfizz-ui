@@ -13,6 +13,9 @@
 
 const fs::path& getUserDocumentsDirectory();
 
+const fs::path toPlatformAgnosticPath(std::string& filePath);
+const fs::path fromPlatformAgnosticPath(const char *filePath);
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 const fs::path& getUserHomeDirectory();
 const fs::path& getXdgConfigHome();

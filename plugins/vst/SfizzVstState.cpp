@@ -5,6 +5,7 @@
 // If not, contact the sfizz maintainers at https://github.com/sfztools/sfizz
 
 #include "SfizzVstState.h"
+#include "plugin/NativeHelpers.h"
 #include <sfizz.h>
 #include <mutex>
 #include <cstring>
@@ -21,7 +22,7 @@ tresult SfizzVstState::load(IBStream* state)
         return kResultFalse;
 
     if (const char* str = s.readStr8())
-        sfzFile = str;
+        sfzFile = fromPlatformAgnosticPath(str);
     else
         return kResultFalse;
 
@@ -41,7 +42,7 @@ tresult SfizzVstState::load(IBStream* state)
 
     if (version >= 1) {
         if (const char* str = s.readStr8())
-            scalaFile = str;
+            scalaFile = fromPlatformAgnosticPath(str);
         else
             return kResultFalse;
 
