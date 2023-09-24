@@ -97,6 +97,10 @@ size_t FileTrieBuilder::ensureDirectory(const fs::path& dirPath)
         fs::path parentPath = dirPath.parent_path();
         if (parentPath != dirPath)
             ent.parent = ensureDirectory(parentPath);
+        else
+            // On Windows, (--dirPath.end()) would be `\\` but `parent_path` and `dirPath`
+            // would both be `C:\\` so we update the name to match.
+            ent.name = dirPath.u8string();
     }
 
     size_t dirIndex = trie.entries_.size();
