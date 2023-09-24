@@ -22,7 +22,7 @@ tresult SfizzVstState::load(IBStream* state)
         return kResultFalse;
 
     if (const char* str = s.readStr8())
-        sfzFile = fromPlatformAgnosticPath(str);
+        sfzFile = fromPlatformAgnosticPath(str).string();
     else
         return kResultFalse;
 
@@ -42,7 +42,7 @@ tresult SfizzVstState::load(IBStream* state)
 
     if (version >= 1) {
         if (const char* str = s.readStr8())
-            scalaFile = fromPlatformAgnosticPath(str);
+            scalaFile = fromPlatformAgnosticPath(str).string();
         else
             return kResultFalse;
 
