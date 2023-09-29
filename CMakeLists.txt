@@ -5,8 +5,6 @@ else()
     cmake_minimum_required(VERSION 3.13)
 endif()
 
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
-
 # The project was splitted in 2 repositories:
 # - `sfizz` for the library, which represents the main repository reference
 # - `sfizz-ui` for UIs (plugins with a future standalone UI in mind).
