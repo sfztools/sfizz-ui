@@ -8,6 +8,10 @@ endif()
 
 include("cmake/Vstgui.cmake")
 
+set(EDITOR_THEMES
+    resources/Themes/Default/theme.xml
+    resources/Themes/Dark/theme.xml
+)
 set(EDITOR_RESOURCES
     logo.png
     logo_orange.png
@@ -33,10 +37,6 @@ set(EDITOR_RESOURCES
     Themes/Dark/theme.xml
     PARENT_SCOPE
 )
-set(UI_RESOURCES
-    resources/Themes/Default/theme.xml
-    resources/Themes/Dark/theme.xml
-)
 function(copy_editor_resources TARGET SOURCE_DIR DESTINATION_DIR)
     set(_deps)
     foreach(res ${EDITOR_RESOURCES})
@@ -53,12 +53,9 @@ function(copy_editor_resources TARGET SOURCE_DIR DESTINATION_DIR)
     add_dependencies("${TARGET}" "${TARGET}_editor_resources")
 endfunction()
 
-set(UI_FILES layout/main.fl layout/about.fl)
-source_group("Editor UI" FILES ${UI_FILES})
-source_group("Editor Resources" FILES ${UI_RESOURCES})
-
 # editor
-add_library(sfizz_editor STATIC EXCLUDE_FROM_ALL
+set(EDITOR_UI_FILES layout/main.fl layout/about.fl)
+set(EDITOR_SOURCES
     src/editor/EditIds.h
     src/editor/EditIds.cpp
     src/editor/Editor.h
@@ -90,10 +87,18 @@ add_library(sfizz_editor STATIC EXCLUDE_FROM_ALL
     src/editor/layout/about.hpp
     src/editor/utility/vstgui_after.h
     src/editor/utility/vstgui_before.h
-    ${UI_FILES}
-    ${UI_RESOURCES}
+)
+source_group("Sources" FILES ${EDITOR_SOURCES})
+source_group("Editor UI" FILES ${EDITOR_UI_FILES})
+source_group("Editor Themes" FILES ${EDITOR_THEMES})
+
+add_library(sfizz_editor STATIC EXCLUDE_FROM_ALL
+    ${EDITOR_SOURCES}
+    ${EDITOR_THEMES}
+    ${EDITOR_UI_FILES}
 )
 add_library(sfizz::editor ALIAS sfizz_editor)
+
 target_include_directories(sfizz_editor PUBLIC "src")
 target_link_libraries(sfizz_editor PUBLIC sfizz::messaging sfizz::plugins-common)
 target_link_libraries(sfizz_editor PRIVATE sfizz::vstgui)
@@ -137,11 +142,14 @@ target_link_libraries(sfizz_editor PRIVATE sfizz::colorspaces sfizz::stb_image
 
 # layout tool
 if(NOT CMAKE_CROSSCOMPILING)
-    add_executable(layout-maker
-        "tools/layout-maker/sources/layout.h"
-        "tools/layout-maker/sources/reader.cpp"
-        "tools/layout-maker/sources/reader.h"
-        "tools/layout-maker/sources/main.cpp")
+    set(LAYOUTMAKER_SOURCES
+        tools/layout-maker/sources/layout.h
+        tools/layout-maker/sources/reader.cpp
+        tools/layout-maker/sources/reader.h
+        tools/layout-maker/sources/main.cpp
+    )
+    source_group("Sources" FILES ${LAYOUTMAKER_SOURCES})
+    add_executable(layout-maker ${LAYOUTMAKER_SOURCES})
     target_link_libraries(layout-maker PRIVATE absl::strings)
 
     foreach(_layout main about)

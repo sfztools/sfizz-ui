@@ -1,19 +1,23 @@
-add_library(plugins-common STATIC EXCLUDE_FROM_ALL
-    "common/plugin/RMSFollower.h"
-    "common/plugin/MessageUtils.h"
-    "common/plugin/MessageUtils.cpp"
-    "common/plugin/InstrumentDescription.h"
-    "common/plugin/InstrumentDescription.cpp"
-    "common/plugin/NativeHelpers.h"
-    "common/plugin/NativeHelpers.cpp"
-    "common/plugin/SfizzFileScan.h"
-    "common/plugin/SfizzFileScan.cpp"
-    "common/plugin/FileTrie.h"
-    "common/plugin/FileTrie.cpp"
-    "common/plugin/SfizzForeignPaths.h"
-    "common/plugin/SfizzForeignPaths.cpp"
-    "common/plugin/SfizzSettings.h"
-    "common/plugin/SfizzSettings.cpp")
+set(PLUGINSCOMMON_SOURCES
+    common/plugin/RMSFollower.h
+    common/plugin/MessageUtils.h
+    common/plugin/MessageUtils.cpp
+    common/plugin/InstrumentDescription.h
+    common/plugin/InstrumentDescription.cpp
+    common/plugin/NativeHelpers.h
+    common/plugin/NativeHelpers.cpp
+    common/plugin/SfizzFileScan.h
+    common/plugin/SfizzFileScan.cpp
+    common/plugin/FileTrie.h
+    common/plugin/FileTrie.cpp
+    common/plugin/SfizzForeignPaths.h
+    common/plugin/SfizzForeignPaths.cpp
+    common/plugin/SfizzSettings.h
+    common/plugin/SfizzSettings.cpp
+)
+source_group("Sources" FILES ${PLUGINSCOMMON_SOURCES})
+add_library(plugins-common STATIC EXCLUDE_FROM_ALL ${PLUGINSCOMMON_SOURCES})
+
 if(APPLE)
     target_sources(plugins-common PRIVATE
         "common/plugin/SfizzForeignPaths.mm"
