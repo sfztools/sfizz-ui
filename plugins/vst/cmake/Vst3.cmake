@@ -31,27 +31,36 @@ add_library(vst3sdk STATIC EXCLUDE_FROM_ALL
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstparameters.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstpresetfile.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstrepresentation.cpp"
-    "${VST3SDK_BASEDIR}/public.sdk/source/vst/utility/stringconvert.cpp")
+    "${VST3SDK_BASEDIR}/public.sdk/source/vst/utility/stringconvert.cpp"
+)
 if(WIN32)
     target_sources(vst3sdk PRIVATE
-        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_win32.cpp")
+        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_win32.cpp"
+    )
 elseif(APPLE)
     target_sources(vst3sdk PRIVATE
-        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_mac.mm")
+        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_mac.mm"
+    )
 else()
     target_sources(vst3sdk PRIVATE
-        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_linux.cpp")
+        "${VST3SDK_BASEDIR}/public.sdk/source/common/threadchecker_linux.cpp"
+    )
 endif()
 target_include_directories(vst3sdk PUBLIC "${VST3SDK_BASEDIR}")
 target_link_libraries(vst3sdk PUBLIC Threads::Threads)
+
 if(APPLE)
     target_link_libraries(vst3sdk PUBLIC ${APPLE_FOUNDATION_LIBRARY})
 endif()
+
 if(MINGW)
     target_compile_definitions(vst3sdk PUBLIC
-        "_NATIVE_WCHAR_T_DEFINED=1" "__wchar_t=wchar_t")
+        "_NATIVE_WCHAR_T_DEFINED=1" "__wchar_t=wchar_t"
+    )
 endif()
+
 set(_vst_release_build_types MinSizeRel Release RelWithDebInfo)
+
 if(CMAKE_BUILD_TYPE IN_LIST _vst_release_build_types)
     target_compile_definitions(vst3sdk PUBLIC "RELEASE")
 else()
@@ -62,50 +71,112 @@ function(plugin_add_vst3sdk NAME)
     target_link_libraries("${NAME}" PRIVATE vst3sdk)
     target_sources("${NAME}" PRIVATE
         "${VST3SDK_BASEDIR}/public.sdk/source/main/moduleinit.cpp"
-        "${VST3SDK_BASEDIR}/public.sdk/source/main/pluginfactory.cpp")
+        "${VST3SDK_BASEDIR}/public.sdk/source/main/pluginfactory.cpp"
+    )
     if(WIN32)
         target_sources("${NAME}" PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/main/dllmain.cpp")
+            "${VST3SDK_BASEDIR}/public.sdk/source/main/dllmain.cpp"
+        )
     elseif(APPLE)
         target_sources("${NAME}" PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/main/macmain.cpp")
+            "${VST3SDK_BASEDIR}/public.sdk/source/main/macmain.cpp"
+        )
     else()
         target_sources("${NAME}" PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/main/linuxmain.cpp")
+            "${VST3SDK_BASEDIR}/public.sdk/source/main/linuxmain.cpp"
+        )
     endif()
 endfunction()
 
 # --- VST3SDK hosting ---
+
+# Find C++ filesystem
+function(sfizz_find_std_fs TARGET)
+    add_library("${TARGET}" INTERFACE)
+
+    set(_fs_src
+"#include <filesystem>
+int main() { return std::filesystem::exists(\"myfile\") ? 0 : 1; }")
+    set(_expfs_src
+"#include <experimental/filesystem>
+int main() { return std::experimental::filesystem::exists(\"myfile\") ? 0 : 1; }")
+
+    check_cxx_source_compiles("${_fs_src}" HAVE_STDFS_DIRECT)
+    check_cxx_source_compiles("${_expfs_src}" HAVE_STDFS_EXPERIMENTAL_DIRECT)
+    if(HAVE_STDFS_DIRECT OR HAVE_STDFS_EXPERIMENTAL_DIRECT)
+        return()
+    endif()
+
+    find_library(STDCPPFS_LIBRARY "stdc++fs")
+    if(STDCPPFS_LIBRARY)
+        set(CMAKE_REQUIRED_LIBRARIES "${STDCPPFS_LIBRARY}")
+        check_cxx_source_compiles("${_fs_src}" HAVE_STDFS_LIBSTDCPPFS)
+        check_cxx_source_compiles("${_expfs_src}" HAVE_STDFS_EXPERIMENTAL_LIBSTDCPPFS)
+        if(HAVE_STDFS_LIBSTDCPPFS OR HAVE_STDFS_EXPERIMENTAL_LIBSTDCPPFS)
+            target_link_libraries("${TARGET}" INTERFACE "${STDCPPFS_LIBRARY}")
+            return()
+        endif()
+    endif()
+
+    find_library(CPPFS_LIBRARY "c++fs")
+    if(CPPFS_LIBRARY)
+        set(CMAKE_REQUIRED_LIBRARIES "${CPPFS_LIBRARY}")
+        check_cxx_source_compiles("${_fs_src}" HAVE_STDFS_STDCPPFS)
+        check_cxx_source_compiles("${_expfs_src}" HAVE_STDFS_EXPERIMENTAL_STDCPPFS)
+        if(HAVE_STDFS_STDCPPFS OR HAVE_STDFS_EXPERIMENTAL_STDCPPFS)
+            target_link_libraries("${TARGET}" INTERFACE "${CPPFS_LIBRARY}")
+            return()
+        endif()
+    endif()
+endfunction()
+sfizz_find_std_fs(stdfs)
+add_library(sfizz::stdfs ALIAS stdfs)
+
 add_library(vst3sdk_hosting STATIC EXCLUDE_FROM_ALL
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/connectionproxy.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/eventlist.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/hostclasses.cpp"
+    "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/parameterchanges.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/pluginterfacesupport.cpp"
     "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/plugprovider.cpp"
-    "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/processdata.cpp")
-if(FALSE)
-    if(WIN32)
-        target_sources(vst3sdk_hosting PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_win32.cpp")
-    elseif(APPLE)
-        target_sources(vst3sdk_hosting PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_mac.mm")
-    else()
-        target_sources(vst3sdk_hosting PRIVATE
-            "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_linux.cpp")
-    endif()
+    "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/processdata.cpp"
+)
+if(WIN32)
+    target_sources(vst3sdk_hosting PRIVATE
+        "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_win32.cpp"
+    )
+elseif(APPLE)
+    target_sources(vst3sdk_hosting PRIVATE
+        "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_mac.mm"
+    )
+    set_source_files_properties(
+        "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_mac.mm"
+        PROPERTIES
+            COMPILE_FLAGS "-fobjc-arc"
+    )
+else()
+    target_sources(vst3sdk_hosting PRIVATE
+        "${VST3SDK_BASEDIR}/public.sdk/source/vst/hosting/module_linux.cpp"
+    )
 endif()
-target_link_libraries(vst3sdk_hosting PUBLIC vst3sdk)
 
+target_link_libraries(vst3sdk_hosting
+    PUBLIC vst3sdk
+    PRIVATE sfizz::stdfs
+)
 # --- VSTGUI ---
+
 add_library(vst3sdk_vstgui STATIC EXCLUDE_FROM_ALL
-    "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstguieditor.cpp")
+    "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstguieditor.cpp"
+)
 if(WIN32)
     target_sources(vst3sdk_vstgui PRIVATE
-        "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstgui_win32_bundle_support.cpp")
+        "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstgui_win32_bundle_support.cpp"
+    )
     target_compile_definitions(vst3sdk_vstgui PRIVATE "SMTG_MODULE_IS_BUNDLE=1")
 endif()
+
 target_link_libraries(vst3sdk_vstgui PUBLIC vst3sdk sfizz::vstgui)
 
 function(plugin_add_vstgui NAME)
@@ -116,7 +187,8 @@ endfunction()
 foreach(_target vst3sdk_vstgui vst3sdk)
     gw_target_warn("${_target}" PUBLIC
         "-Wno-extra"
-        "-Wno-class-memaccess")
+        "-Wno-class-memaccess"
+    )
     gw_target_warn("${_target}" PRIVATE
         "-Wno-multichar"
         "-Wno-reorder"
@@ -125,5 +197,6 @@ foreach(_target vst3sdk_vstgui vst3sdk)
         "-Wno-unknown-pragmas"
         "-Wno-unused-function"
         "-Wno-unused-parameter"
-        "-Wno-unused-variable")
+        "-Wno-unused-variable"
+    )
 endforeach()

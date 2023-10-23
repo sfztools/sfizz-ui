@@ -374,3 +374,76 @@ if(PLUGIN_VST2)
         endif()
     endif()
 endif()
+
+# --- Standalone program --- #
+
+if(SFIZZ_STANDALONE)
+    set(SOURCES_STANDALONE
+        standalone/standalonehost.h
+        standalone/standalonehost.cpp
+        standalone/media/audioclient.h
+        standalone/media/imediaserver.h
+        standalone/media/iparameterclient.h
+        standalone/media/miditovst.h
+        standalone/media/audioclient.cpp
+        standalone/platform/appinit.h
+        standalone/platform/iapplication.h
+        standalone/platform/iplatform.h
+        standalone/platform/iwindow.h
+    )
+    set(SOURCES_STANDALONE_WIN32
+        standalone/platform/win32/platform.cpp
+        standalone/platform/win32/window.h
+        standalone/platform/win32/window.cpp
+    )
+    set(SOURCES_STANDALONE_MACOS
+        standalone/platform/mac/platform.mm
+        standalone/platform/mac/window.h
+        standalone/platform/mac/window.mm
+    )
+    set(SOURCES_STANDALONE_UNIX
+        standalone/media/jack/jackclient.cpp
+        standalone/platform/linux/platform.cpp
+# Was used for X11 version
+#       standalone/platform/linux/runloop.h
+#       standalone/platform/linux/runloop.cpp
+        standalone/platform/linux/window.h
+        standalone/platform/linux/window.cpp
+    )
+    source_group("Sources" FILES
+        ${SOURCES_STANDALONE}
+        ${SOURCES_STANDALONE_WIN32}
+        ${SOURCES_STANDALONE_MACOS}
+        ${SOURCES_STANDALONE_UNIX}
+    )
+    set_source_files_properties(
+        standalone/platform/mac/window.mm
+        standalone/platform/mac/platform.mm
+        PROPERTIES
+            COMPILE_FLAGS "-fobjc-arc"
+    )
+    add_executable(sfizz_standalone WIN32
+        ${SOURCES_STANDALONE}
+    )
+    set_target_properties(sfizz_standalone PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/$<0:>"
+    )
+    target_include_directories(sfizz_standalone PRIVATE "standalone" "${CMAKE_CURRENT_BINARY_DIR}")
+    target_link_libraries(sfizz_standalone PRIVATE vst3sdk_hosting sfizz::filesystem)
+    if(WIN32)
+        target_sources(sfizz_standalone PRIVATE ${SOURCES_STANDALONE_WIN32}
+        )
+    elseif(APPLE)
+        target_sources(sfizz_standalone PRIVATE ${SOURCES_STANDALONE_MACOS})
+        target_link_libraries(sfizz_standalone PRIVATE "${APPLE_COCOA_LIBRARY}")
+    else()
+        target_sources(sfizz_standalone PRIVATE ${SOURCES_STANDALONE_UNIX})
+        target_compile_definitions(sfizz_standalone PRIVATE "EDITORHOST_GTK=1")
+        target_link_libraries(sfizz_standalone PRIVATE
+            sfizz::jack
+            sfizz::gtkmm
+            sfizz::x11
+        )
+    endif()
+    install(TARGETS sfizz_standalone DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT "standalone")
+endif()

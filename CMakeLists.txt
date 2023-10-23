@@ -37,6 +37,7 @@ option_ex(PLUGIN_LV2_UI            "Enable LV2 plug-in user interface" ON)
 option_ex(PLUGIN_PUREDATA          "Enable Puredata plug-in build" OFF)
 option_ex(PLUGIN_VST2              "Enable VST2 plug-in build (unsupported)" OFF)
 option_ex(PLUGIN_VST3              "Enable VST3 plug-in build" ON)
+option_ex(SFIZZ_STANDALONE         "Enable standalone build" OFF)
 option_ex(SFIZZ_USE_SYSTEM_LV2     "Use LV2 headers preinstalled on system" OFF)
 option_ex(SFIZZ_USE_SYSTEM_VST3SDK "Use VST3SDK source files preinstalled on system" OFF)
 
@@ -52,12 +53,16 @@ if(WIN32)
 endif()
 
 # Override sfizz CXX standard since vstgui requires 17 anyway
-if (PLUGIN_AU OR PLUGIN_LV2_UI OR PLUGIN_VST3 OR PLUGIN_VST2)
+if (PLUGIN_AU OR PLUGIN_LV2_UI OR PLUGIN_VST3 OR PLUGIN_VST2 OR SFIZZ_STANDALONE)
     set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
 endif()
 
 include(SfizzConfig) # Re-used for this project
 include(BundleDylibs)
+
+if(SFIZZ_STANDALONE)
+    include(StandaloneDeps)
+endif()
 
 add_subdirectory(library)
 add_subdirectory(plugins)
