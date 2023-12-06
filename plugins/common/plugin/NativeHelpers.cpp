@@ -14,10 +14,11 @@
 
 
 #if defined(_WIN32)
-const fs::path toPlatformAgnosticPath(std::string& filePath)
+const fs::path toPlatformAgnosticPath(const std::string& filePath)
 {
-    std::replace(filePath.begin(), filePath.end(), '\\', '/');
-    return fs::u8path(filePath);
+    std::string p { filePath };
+    std::replace(p.begin(), p.end(), '\\', '/');
+    return fs::u8path(p);
 }
 const fs::path fromPlatformAgnosticPath(const char *filePath)
 {
@@ -26,7 +27,7 @@ const fs::path fromPlatformAgnosticPath(const char *filePath)
     return fs::u8path(p);
 }
 #else
-const fs::path toPlatformAgnosticPath(std::string& filePath)
+const fs::path toPlatformAgnosticPath(const std::string& filePath)
 {
     return fs::u8path(filePath);
 }
