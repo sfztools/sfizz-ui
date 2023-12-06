@@ -122,7 +122,7 @@ tresult SfizzVstState::store(IBStream* state) const
     if (!s.writeInt64u(currentStateVersion))
         return kResultFalse;
 
-    if (!s.writeStr8(sfzFile.c_str()))
+    if (!s.writeStr8(toPlatformAgnosticPath(sfzFile).string().c_str()))
         return kResultFalse;
 
     if (!s.writeFloat(volume))
@@ -137,7 +137,7 @@ tresult SfizzVstState::store(IBStream* state) const
     if (!s.writeInt32(preloadSize))
         return kResultFalse;
 
-    if (!s.writeStr8(scalaFile.c_str()))
+    if (!s.writeStr8(toPlatformAgnosticPath(scalaFile).string().c_str()))
         return kResultFalse;
 
     if (!s.writeInt32(scalaRootKey))
