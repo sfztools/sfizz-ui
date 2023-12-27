@@ -414,3 +414,33 @@ jobs:
           files: |
             sfizz-${{ github.ref_name }}-*
             sfizz-${{ github.ref_name }}.*
+  update_website:
+    if:      github.ref_type == 'tag'
+    name:    Update website
+    needs:   deploy
+    runs-on: ubuntu-latest
+    # Automate the creation of a post and atom feed to announce
+    # about the new version just released, and update the download links.
+    # We wants to make working this also with forks for testing purposes,
+    # so the site repository, branch and token names should be hardcoded
+    # to work at least with those having the same local settings:
+    # from "repository_owner/sfizz_fork" to "repository_owner/sfztools.github.io".
+    # So a classic token needed for authentication must be added in secrets
+    # with SITE_UPDATE_TOKEN as name (or please let us know if it's possible
+    # and eventually how to make it work with GITHUB_TOKEN instead).
+    steps:
+    - name: Build site
+      env:
+        api_version:  "2022-11-28"
+        site_repo:     sfztools.github.io
+        site_branch:   master
+        site_workflow: build.yml
+        token:     ${{ secrets.SITE_UPDATE_TOKEN }}
+      run: |
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ env.token }}" \
+          -H "X-GitHub-Api-Version: ${{ env.api_version }}" \
+          https://api.github.com/repos/${{ github.repository_owner }}/${{ env.site_repo }}/actions/workflows/${{ env.site_workflow }}/dispatches \
+          -d '{"ref":"${{ env.site_branch }}"}'
