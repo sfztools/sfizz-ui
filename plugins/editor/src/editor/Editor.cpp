@@ -11,7 +11,6 @@
 #include "GUIComponents.h"
 #include "GUIHelpers.h"
 #include "GUIPiano.h"
-#include "GitBuildId.h"
 #include "DlgAbout.h"
 #include "ImageHelpers.h"
 #include "NativeHelpers.h"
@@ -181,8 +180,6 @@ struct Editor::Impl : EditorController::Receiver,
     SharedPointer<CBitmap> backgroundBitmap_;
     SharedPointer<CBitmap> defaultBackgroundBitmap_;
     SharedPointer<CBitmap> controlsBitmap_;
-
-    CTextLabel* sfizzVersionLabel_ = nullptr;
 
     SKnobCCBox* getSecondaryCCKnob(unsigned cc)
     {
@@ -1169,11 +1166,6 @@ void Editor::Impl::createFrameContents()
 #endif
 
         mainView_ = owned(mainView);
-    }
-
-    if (CTextLabel* label = sfizzVersionLabel_) {
-        std::string version = GitBuildId[0] ? absl::StrCat(SFIZZ_VERSION ".", GitBuildId) : SFIZZ_VERSION;
-        label->setText(absl::StrCat(u8"sfizz ", version));
     }
 
     ///

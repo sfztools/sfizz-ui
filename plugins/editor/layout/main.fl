@@ -240,22 +240,22 @@ widget_class mainView {open
     } {
       Fl_Spinner oversamplingSlider_ {
         comment {tag=kTagSetOversampling}
-        xywh {180 195 70 25}
+        xywh {180 170 70 25}
         class ValueMenu
       }
       Fl_Box {} {
         label Oversampling
-        xywh {10 195 85 25} align 20
+        xywh {10 170 85 25} align 20
         class Label
       }
       Fl_Box {} {
         label {Preload size}
-        xywh {10 170 75 25} align 20
+        xywh {10 145 75 25} align 20
         class Label
       }
       Fl_Spinner preloadSizeSlider_ {
         comment {tag=kTagSetPreloadSize}
-        xywh {180 170 70 25}
+        xywh {180 145 70 25}
         class ValueMenu
       }
       Fl_Spinner sampleQualitySlider_ {
@@ -357,18 +357,13 @@ widget_class mainView {open
       }
       Fl_Box {} {
         label {Sustain cancels release}
-        xywh {10 220 145 25} align 20
+        xywh {10 195 145 25} align 20
         class Label
       }
       Fl_Check_Button sustainCancelsReleaseCheckbox_ {
         comment {tag=kTagSetSustainCancelsRelease}
-        xywh {180 220 25 25} down_box DOWN_BOX
+        xywh {180 195 25 25} down_box DOWN_BOX
         class Checkbox
-      }
-      Fl_Box sfizzVersionLabel_ {
-        label SFIZZ_VERSION
-        xywh {10 145 225 20}
-        class Label
       }
       Fl_Box {} {
         label {Rendering quality}
