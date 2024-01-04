@@ -26,9 +26,13 @@ endfunction()
 add_pd_external(sfizz_puredata "sfizz_puredata.c")
 target_compile_definitions(sfizz_puredata PRIVATE
     "MIDI_CC_COUNT=${MIDI_CC_COUNT}"
-    "SFIZZ_VERSION=\"${CMAKE_PROJECT_VERSION}\"")
-target_link_libraries(sfizz_puredata PRIVATE sfizz::import sfizz::sfizz)
-
+    "SFIZZ_VERSION=\"${CMAKE_PROJECT_VERSION}\""
+)
+target_link_libraries(sfizz_puredata PRIVATE
+    sfizz::import
+    sfizz::sfizz
+    plugins::git_build_id
+)
 set_target_properties(sfizz_puredata PROPERTIES
     OUTPUT_NAME "sfizz"
     LIBRARY_OUTPUT_DIRECTORY "${PUREDATA_BINARY_DIR}/$<0:>")
@@ -37,9 +41,6 @@ if(MINGW)
     set_property(TARGET sfizz_puredata APPEND_STRING
         PROPERTY LINK_FLAGS " -static")
 endif()
-
-# Git build identifier
-target_link_libraries(sfizz_puredata PRIVATE sfizz-git-build-id)
 
 # Copy resources
 copy_puredata_resources(sfizz_puredata
