@@ -38,6 +38,24 @@ target_link_libraries(plugins-common
     PRIVATE sfizz::internal sfizz::sfizz)
 add_library(sfizz::plugins-common ALIAS plugins-common)
 
+add_custom_target(generate_plugins_git_build_id
+    COMMAND
+        "${CMAKE_COMMAND}"
+        "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+        "-DOUTPUT_FILE=${PROJECT_BINARY_DIR}/git-build-id/PluginGitBuildId.c"
+        "-DPREFIX=Plugin"
+        "-P" "${PROJECT_SOURCE_DIR}/library/cmake/GitBuildID.cmake"
+    BYPRODUCTS
+        "${PROJECT_BINARY_DIR}/git-build-id/PluginGitBuildId.c"
+)
+add_library(plugins_git_build_id STATIC EXCLUDE_FROM_ALL
+    "${PROJECT_SOURCE_DIR}/plugins/git-build-id/PluginGitBuildId.h"
+    "${PROJECT_BINARY_DIR}/git-build-id/PluginGitBuildId.c"
+)
+target_include_directories(plugins_git_build_id PUBLIC "${PROJECT_SOURCE_DIR}/plugins/git-build-id")
+add_dependencies(plugins_git_build_id generate_plugins_git_build_id)
+add_library(plugins::git_build_id ALIAS plugins_git_build_id)
+
 # Link system dependencies
 if(WIN32)
 elseif(ANDROID)

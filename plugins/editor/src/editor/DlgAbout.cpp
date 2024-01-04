@@ -7,7 +7,7 @@
 #include "DlgAbout.h"
 #include "GUIComponents.h"
 #include "GUIDefs.h"
-#include "GitBuildId.h"
+#include "PluginGitBuildId.h"
 #include "NativeHelpers.h"
 
 #include "utility/vstgui_before.h"
@@ -53,8 +53,8 @@ SAboutDialog::SAboutDialog(const CRect& bounds)
 
             const char* version = SFIZZ_VERSION;
             std::string versionBuf;
-            if (GitBuildId[0]) {
-                versionBuf = absl::StrCat(SFIZZ_VERSION ".", GitBuildId);
+            if (PluginGitBuildId[0]) {
+                versionBuf = absl::StrCat(SFIZZ_VERSION ".", PluginGitBuildId);
                 version = versionBuf.c_str();
             }
 #if 0

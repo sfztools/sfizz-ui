@@ -99,9 +99,12 @@ add_library(sfizz_editor STATIC EXCLUDE_FROM_ALL
 )
 add_library(sfizz::editor ALIAS sfizz_editor)
 
-target_include_directories(sfizz_editor PUBLIC "src")
+target_include_directories(sfizz_editor PUBLIC src)
 target_link_libraries(sfizz_editor PUBLIC sfizz::messaging sfizz::plugins-common)
-target_link_libraries(sfizz_editor PRIVATE sfizz::vstgui)
+target_link_libraries(sfizz_editor PRIVATE
+    sfizz::vstgui
+    plugins::git_build_id
+)
 target_compile_definitions(sfizz_editor PRIVATE
     "SFIZZ_VERSION=\"${CMAKE_PROJECT_VERSION}\"")
 if(APPLE)
@@ -137,9 +140,13 @@ else()
     target_include_directories(sfizz_editor PRIVATE ${sfizz-gio_INCLUDE_DIRS})
     target_link_libraries(sfizz_editor PRIVATE ${sfizz-gio_LIBRARIES})
 endif()
-target_link_libraries(sfizz_editor PRIVATE sfizz::colorspaces sfizz::stb_image
-    sfizz::bit_array sfizz::filesystem sfizz::pugixml)
-
+target_link_libraries(sfizz_editor PRIVATE
+    sfizz::colorspaces
+    sfizz::stb_image
+    sfizz::bit_array
+    sfizz::filesystem
+    sfizz::pugixml
+)
 # layout tool
 if(NOT CMAKE_CROSSCOMPILING)
     set(LAYOUTMAKER_SOURCES
@@ -161,6 +168,3 @@ if(NOT CMAKE_CROSSCOMPILING)
             DEPENDS layout-maker "${CMAKE_CURRENT_SOURCE_DIR}/layout/${_layout}.fl")
     endforeach()
 endif()
-
-# Git build identifier
-target_link_libraries(sfizz_editor PRIVATE sfizz-git-build-id)
