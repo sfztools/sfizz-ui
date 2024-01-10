@@ -1,4 +1,4 @@
-set(LV2_PLUGIN_PRJ_NAME "${PROJECT_NAME}_lv2")
+set(LV2_PLUGIN_PRJ_NAME "plugins_lv2")
 
 # Set the build directory as <build_dir>/lv2/<plugin_name>.lv2/
 set(PROJECT_BINARY_DIR "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.lv2")
@@ -7,30 +7,47 @@ set(PROJECT_BINARY_DIR "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.lv2")
 include(LV2Config)
 
 # Keep non build turtle files in IDE
-set(LV2_PLUGIN_TTL_SRC_FILES
+set(LV2_PLUGIN_TTL_SOURCES
     manifest.ttl.in
     ${PROJECT_NAME}.ttl.in
 )
 if(PLUGIN_LV2_UI)
-    list(APPEND LV2_PLUGIN_TTL_SRC_FILES
-        ${PROJECT_NAME}_ui.ttl.in)
+    list(APPEND LV2_PLUGIN_TTL_SOURCES ${PROJECT_NAME}_ui.ttl.in)
 endif()
-source_group("Turtle Files" FILES
-    ${LV2_PLUGIN_TTL_SRC_FILES}
-)
-add_library(${LV2_PLUGIN_PRJ_NAME} MODULE
+set(LV2_PLUGIN_SOURCES
     ${PROJECT_NAME}.cpp
     ${PROJECT_NAME}_lv2_common.cpp
-    ${LV2_PLUGIN_TTL_SRC_FILES})
-target_link_libraries(${LV2_PLUGIN_PRJ_NAME} PRIVATE sfizz::sfizz sfizz::import sfizz::plugins-common)
+    ${LV2_PLUGIN_TTL_SOURCES}
+)
+if(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS)
+    source_group("" FILES ${LV2_PLUGIN_SOURCES})
+endif()
+source_group("Turtle Files" FILES ${LV2_PLUGIN_TTL_SOURCES})
 
+add_library(${LV2_PLUGIN_PRJ_NAME} MODULE ${LV2_PLUGIN_SOURCES})
+target_link_libraries(${LV2_PLUGIN_PRJ_NAME} PRIVATE
+    sfizz::sfizz
+    sfizz::import
+    plugins::common
+)
 if(PLUGIN_LV2_UI)
-    add_library(${LV2_PLUGIN_PRJ_NAME}_ui MODULE
+    set(LV2_PLUGIN_UI_FILES
         ${PROJECT_NAME}_ui.cpp
         ${PROJECT_NAME}_lv2_common.cpp
         vstgui_helpers.h
-        vstgui_helpers.cpp)
-    target_link_libraries(${LV2_PLUGIN_PRJ_NAME}_ui PRIVATE sfizz::editor sfizz::vstgui sfizz::plugins-common)
+        vstgui_helpers.cpp
+    )
+    if(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS)
+        source_group("" FILES ${LV2_PLUGIN_UI_FILES})
+    endif()
+
+    add_library(${LV2_PLUGIN_PRJ_NAME}_ui MODULE ${LV2_PLUGIN_UI_FILES})
+
+    target_link_libraries(${LV2_PLUGIN_PRJ_NAME}_ui PRIVATE
+        plugins::editor
+        plugins::vstgui
+        plugins::common
+    )
 endif()
 
 if(PLUGIN_LV2_PSA)

@@ -106,7 +106,7 @@ if(WIN32)
         "${VST3SDK_BASEDIR}/public.sdk/source/vst/vstgui_win32_bundle_support.cpp")
     target_compile_definitions(vst3sdk_vstgui PRIVATE "SMTG_MODULE_IS_BUNDLE=1")
 endif()
-target_link_libraries(vst3sdk_vstgui PUBLIC vst3sdk sfizz::vstgui)
+target_link_libraries(vst3sdk_vstgui PUBLIC vst3sdk plugins::vstgui)
 
 function(plugin_add_vstgui NAME)
     target_link_libraries("${NAME}" PRIVATE vst3sdk_vstgui)

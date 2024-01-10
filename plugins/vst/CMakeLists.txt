@@ -18,18 +18,21 @@ configure_file(VstPluginDefs.h.in "${CMAKE_CURRENT_BINARY_DIR}/VstPluginDefs.h")
 include("cmake/Vst3.cmake")
 
 # Add the ring buffer
-set(RINGBUFFER_HEADERS
+set(RINGBUFFER_SOURCES
     "external/ring_buffer/ring_buffer/ring_buffer.h"
-    "external/ring_buffer/ring_buffer/ring_buffer.tcc")
-add_library(sfizz-ring-buffer STATIC EXCLUDE_FROM_ALL
+    "external/ring_buffer/ring_buffer/ring_buffer.tcc"
     "external/ring_buffer/ring_buffer/ring_buffer.cpp"
-    ${RINGBUFFER_HEADERS})
-source_group("Header Files" FILES ${RINGBUFFER_HEADERS})
-target_include_directories(sfizz-ring-buffer PUBLIC "external/ring_buffer")
-add_library(sfizz::ring-buffer ALIAS sfizz-ring-buffer)
+)
+if(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS)
+    source_group("" FILES ${RINGBUFFER_SOURCES})
+endif()
+
+add_library(plugins_ring_buffer STATIC EXCLUDE_FROM_ALL ${RINGBUFFER_SOURCES})
+target_include_directories(plugins_ring_buffer PUBLIC "external/ring_buffer")
+add_library(plugins::ring-buffer ALIAS plugins_ring_buffer)
 
 # Build the VST shared code
-add_library(sfizz-vst3-core STATIC EXCLUDE_FROM_ALL
+set(VST3_CORE_SOURCES
     SfizzVstProcessor.cpp
     SfizzVstProcessor.h
     SfizzVstController.cpp
@@ -47,38 +50,54 @@ add_library(sfizz-vst3-core STATIC EXCLUDE_FROM_ALL
     OrderedEventProcessor.hpp
     IdleUpdateHandler.h
     X11RunLoop.h
-    X11RunLoop.cpp)
-target_include_directories(sfizz-vst3-core
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(sfizz-vst3-core
-    PRIVATE sfizz::sfizz
-    PRIVATE sfizz::import
-    PRIVATE sfizz::editor
-    PRIVATE sfizz::plugins-common
-    PRIVATE sfizz::pugixml sfizz::filesystem
-    PRIVATE sfizz::ring-buffer
-    PRIVATE absl::strings absl::optional absl::container_common
+    X11RunLoop.cpp
+)
+if(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS)
+    source_group("" FILES ${VST3_CORE_SOURCES})
+endif()
+
+add_library(plugins_vst3_core STATIC EXCLUDE_FROM_ALL ${VST3_CORE_SOURCES})
+
+target_include_directories(plugins_vst3_core PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(plugins_vst3_core PRIVATE
+    sfizz::sfizz
+    sfizz::filesystem
+    sfizz::import
+    sfizz::pugixml
+    plugins::common
+    plugins::editor
+    plugins::ring-buffer
+    absl::strings
+    absl::optional
+    absl::container_common
     vst3sdk
-    vst3sdk_vstgui)
-gw_target_warn(sfizz-vst3-core PRIVATE
+    vst3sdk_vstgui
+)
+gw_target_warn(plugins_vst3_core PRIVATE
     "-Wno-ignored-qualifiers"
     "-Wno-unused-parameter")
-add_library(sfizz::vst3-core ALIAS sfizz-vst3-core)
+add_library(plugins::vst3_core ALIAS plugins_vst3_core)
 
 # --- VST3 plugin --- #
 
 if(PLUGIN_VST3)
-    set(VST3_PLUGIN_PRJ_NAME "${PROJECT_NAME}_vst3")
+    set(VST3_PLUGIN_PRJ_NAME "plugins_vst3")
     set(VST3_PLUGIN_BUNDLE_NAME "${PROJECT_NAME}.vst3")
 
+    if(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS)
+        source_group("" FILES VstPluginFactory.cpp)
+    endif()
+
     add_library(${VST3_PLUGIN_PRJ_NAME} MODULE "VstPluginFactory.cpp")
+
     if(WIN32)
         target_sources(${VST3_PLUGIN_PRJ_NAME} PRIVATE vst3.def)
     endif()
+
     target_include_directories(${VST3_PLUGIN_PRJ_NAME}
         PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
     target_link_libraries(${VST3_PLUGIN_PRJ_NAME}
-        PRIVATE sfizz-vst3-core)
+        PRIVATE plugins_vst3_core)
     set_target_properties(${VST3_PLUGIN_PRJ_NAME} PROPERTIES
         OUTPUT_NAME "${PROJECT_NAME}"
         PREFIX "")
@@ -156,7 +175,7 @@ endif()
 if(PLUGIN_AU AND NOT APPLE)
     message(WARNING "Audio Unit is available only for macOS builds")
 elseif(PLUGIN_AU)
-    set(AU_PLUGIN_PRJ_NAME "${PROJECT_NAME}_au")
+    set(AU_PLUGIN_PRJ_NAME "plugins_au")
     set(AU_PLUGIN_BUNDLE_NAME "${PROJECT_NAME}.component")
 
     add_library(${AU_PLUGIN_PRJ_NAME} MODULE
@@ -179,7 +198,7 @@ elseif(PLUGIN_AU)
         "${APPLE_COREMIDI_LIBRARY}")
 
     target_link_libraries(${AU_PLUGIN_PRJ_NAME}
-        PRIVATE sfizz-vst3-core)
+        PRIVATE plugins_vst3_core)
     set_target_properties(${AU_PLUGIN_PRJ_NAME} PROPERTIES
         OUTPUT_NAME "${PROJECT_NAME}"
         PREFIX "")
@@ -331,7 +350,7 @@ if(PLUGIN_VST2)
     endif()
 
     target_link_libraries(${VST2_PLUGIN_PRJ_NAME}
-        PRIVATE sfizz-vst3-core)
+        PRIVATE plugins_vst3_core)
     set_target_properties(${VST2_PLUGIN_PRJ_NAME} PROPERTIES
         OUTPUT_NAME "${PROJECT_NAME}"
         PREFIX "")
