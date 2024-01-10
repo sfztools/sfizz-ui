@@ -40,6 +40,9 @@ option_ex(PLUGIN_VST3              "Enable VST3 plug-in build" ON)
 option_ex(SFIZZ_USE_SYSTEM_LV2     "Use LV2 headers preinstalled on system" OFF)
 option_ex(SFIZZ_USE_SYSTEM_VST3SDK "Use VST3SDK source files preinstalled on system" OFF)
 
+# This is useful with some IDE like QtCreator to avoid them to create additional virtual directories
+option_ex(SFIZZ_CMAKE_USE_EMPTY_SOURCE_GROUPS "Use CMake source_group by passing empty name" OFF)
+
 set(MIDI_CC_COUNT 512 CACHE STRING "Maximum amount of Control Change Messages")
 
 if(PLUGIN_LV2 AND SFIZZ_SNDFILE_STATIC)
