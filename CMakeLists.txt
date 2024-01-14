@@ -14,14 +14,14 @@ project(sfizz
     DESCRIPTION  "SFZ sampler, providing AU, LV2, PureData and VST plugins."
     HOMEPAGE_URL "http://sfztools.github.io/sfizz"
     LANGUAGES    CXX C
-    VERSION      1.2.2
+    VERSION      1.2.3
 )
 set(PROJECT_REPOSITORY "https://github.com/sfztools/sfizz")
 set(PROJECT_AUTHOR     "SFZTools")
 set(PROJECT_EMAIL      "paul@ferrand.cc")
 
 set(LV2_PLUGIN_VERSION_MINOR 10)
-set(LV2_PLUGIN_VERSION_MICRO 4)
+set(LV2_PLUGIN_VERSION_MICRO 6)
 
 # External configuration CMake scripts
 set (CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};"
