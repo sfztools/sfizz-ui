@@ -4,7 +4,20 @@ The format is based on [Keep a Changelog][1].
 
 This project tries to adhere to [Semantic Versioning][2].
 
-## [Unreleased]
+## Unreleased
+
+## [1.2.3] - 2024-01-15
+
+### Changed
+
+- Updated the engine to 1.2.3 (see https://github.com/sfztools/sfizz/blob/develop/CHANGELOG.md)
+- Remove the sfizz engine version in the option panel.
+- The sfizz version in the about page (when clicking on the sfizz icon text) is now the plugin version rather than the engine version, with the plugin commit hash if appended.
+- Various CI changes.
+
+### Fixed
+
+- Improve cross-platform path handling to search for SFZ files in user documents.
 
 ## [1.2.2] - 2023-08-27
 
