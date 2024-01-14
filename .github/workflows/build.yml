@@ -171,7 +171,9 @@ jobs:
         else
           options=(
             ${options[@]}
+            # FIXME: Find out why https://github.com/sfztools/sfizz/commit/d6f8a558607472ce222d0e2448bbe852028b4a39 is not working
             -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            -D WAVPACK_ENABLE_ASM=OFF
           )
         fi
         cmake "${options[@]}"
