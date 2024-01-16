@@ -1482,14 +1482,17 @@ restore(LV2_Handle instance,
     sfizz_plugin_t *self = (sfizz_plugin_t *)instance;
 
     LV2_State_Map_Path *map_path = NULL;
-    LV2_State_Free_Path *free_path = &sfizz_State_Free_Path;
+    LV2_State_Free_Path *free_path = NULL;
     for (const LV2_Feature *const *f = features; *f; ++f)
     {
-        if (!strcmp((*f)->URI, LV2_STATE__mapPath))
+        if (!map_path && !strcmp((*f)->URI, LV2_STATE__mapPath))
             map_path = (LV2_State_Map_Path *)(**f).data;
-        else if (!strcmp((*f)->URI, LV2_STATE__freePath))
+        else if (!free_path && !strcmp((*f)->URI, LV2_STATE__freePath))
             free_path = (LV2_State_Free_Path *)(**f).data;
     }
+
+    if (!free_path)
+        free_path = &sfizz_State_Free_Path;
 
     // Set default values
     self->last_keyswitch = -1;
@@ -1622,14 +1625,17 @@ save(LV2_Handle instance,
     sfizz_plugin_t *self = (sfizz_plugin_t *)instance;
 
     LV2_State_Map_Path *map_path = NULL;
-    LV2_State_Free_Path *free_path = &sfizz_State_Free_Path;
+    LV2_State_Free_Path *free_path = NULL;
     for (const LV2_Feature *const *f = features; *f; ++f)
     {
-        if (!strcmp((*f)->URI, LV2_STATE__mapPath))
+        if (!map_path && !strcmp((*f)->URI, LV2_STATE__mapPath))
             map_path = (LV2_State_Map_Path *)(**f).data;
-        else if (!strcmp((*f)->URI, LV2_STATE__freePath))
+        else if (!free_path && !strcmp((*f)->URI, LV2_STATE__freePath))
             free_path = (LV2_State_Free_Path *)(**f).data;
     }
+
+    if (!free_path)
+        free_path = &sfizz_State_Free_Path;
 
     const char *path;
 
