@@ -19,11 +19,13 @@ env:
 # defaults:
 # shell: pwsh on windows, bash all the rest
 # working-directory: ${{ github.workspace }}
+
 jobs:
   clang_tidy:
-    if: ${{ github.ref_type == 'branch' }}
     name: Clang Tidy
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-20.04
+    timeout-minutes: 10
     steps:
     - name: Checkout
       uses: actions/checkout@v3
