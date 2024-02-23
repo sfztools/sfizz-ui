@@ -45,6 +45,10 @@ if(NOT VST3_PACKAGE_ARCHITECTURE)
             set(VST3_PACKAGE_ARCHITECTURE "${VST3_SYSTEM_PROCESSOR}")
         elseif(VST3_SYSTEM_PROCESSOR MATCHES "^(aarch64)$")
             set(VST3_PACKAGE_ARCHITECTURE "aarch64")
+        # We have no much ways to support RISC without machines to test,
+        # but at least don't deny the possibility to build
+        elseif(VST3_SYSTEM_PROCESSOR MATCHES "^(riscv64)$")
+            set(VST3_PACKAGE_ARCHITECTURE "riscv64")
         else()
             message(FATAL_ERROR "We don't know this architecture for VST3: ${VST3_SYSTEM_PROCESSOR}.")
         endif()
