@@ -4,7 +4,14 @@ The format is based on [Keep a Changelog][1].
 
 This project tries to adhere to [Semantic Versioning][2].
 
-## Unreleased
+## [Unreleased]
+
+### Changed
+
+- Avoid duplicated LV2 State Extension path mapping features (#124 by @rncbc).
+- Various CI and CMake improvements.
+- Updated VSTGUI to 4.13.3.
+- Updated VST3SDK to update to 3.7.10_build_14.
 
 ## [1.2.3] - 2024-01-15
 
@@ -12,8 +19,11 @@ This project tries to adhere to [Semantic Versioning][2].
 
 - Updated the engine to 1.2.3 (see https://github.com/sfztools/sfizz/blob/develop/CHANGELOG.md)
 - Remove the sfizz engine version in the option panel.
-- The sfizz version in the about page (when clicking on the sfizz icon text) is now the plugin version rather than the engine version, with the plugin commit hash if appended.
+- The sfizz version in the about page (when clicking on the sfizz icon text)
+  is now the plugin version rather than the engine version,
+  with the plugin commit hash if appended.
 - Various CI changes.
+- Updated STB image to 2.29.
 
 ### Fixed
 
@@ -799,8 +809,9 @@ becoming a library to be used in other projects, plus a LV2 plugin.
 [1]: https://keepachangelog.com/en/1.0.0/
 [2]: https://semver.org/spec/v2.0.0.html
 
-[Unreleased]: https://github.com/sfztools/sfizz/compare/1.2.2...HEAD
-[1.2.2]:  https://github.com/sfztools/sfizz/compare/1.2.1...1.2.2
+[Unreleased]: https://github.com/sfztools/sfizz-ui/compare/1.2.3...HEAD
+[1.2.3]:  https://github.com/sfztools/sfizz-ui/compare/1.2.2...1.2.3
+[1.2.2]:  https://github.com/sfztools/sfizz-ui/commits/1.2.2/
 [1.2.1]:  https://github.com/sfztools/sfizz/compare/1.2.0...1.2.1
 [1.2.0]:  https://github.com/sfztools/sfizz/compare/1.1.1...1.2.0
 [1.1.1]:  https://github.com/sfztools/sfizz/compare/1.1.0...1.1.1
