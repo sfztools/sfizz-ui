@@ -213,11 +213,11 @@ For now the usage is a bit hand-made, as it requires the [sfizz-render] program 
 The logger outputs CSV files for the rendering and file-loading processes.
 The file `scripts/performance_report.py` is made to process and produce a nice interactive report from this data.
 
-[build]: https://sfz.tools/sfizz/development/build/
+[build]: https://sfztools.github.io/sfizz/development/build/
 [benchmark]: https://github.com/google/benchmark
 [sfizz-render]: https://github.com/sfztools/sfizz-render
 [GOVERNANCE]: GOVERNANCE.md
-[api]: https://sfz.tools/sfizz/api/
+[api]: https://sfztools.github.io/sfizz/api/
 [RAII]: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-resource
 [CppCoreGuidelines]: https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
 [Catch]: https://github.com/catchorg/Catch2

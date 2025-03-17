@@ -277,7 +277,7 @@ void SAboutDialog::valueChanged(CControl *ctl)
             break;
 
         Call::later([]() {
-            openURLWithExternalProgram("https://sfz.tools/sfizz/");
+            openURLWithExternalProgram("https://sfztools.github.io/sfizz/");
         });
         break;
 

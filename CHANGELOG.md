@@ -129,7 +129,7 @@ This project tries to adhere to [Semantic Versioning][2].
   a 16-out version (as 8 stereo outs) (#1002)
 - The `emscripten` branch allows to run sfizz through WASM
   for your web-oriented needs. An example with WebMidi
-  is available at https://sfz.tools/sfizz-webaudio/
+  is available at https://sfztools.github.io/sfizz-webaudio/
   (requires a Chromium-based browser),
   with source code at https://github.com/sfztools/sfizz-webaudio.
 - sfizz can now parse embedded samples in base64 data (#1041)
@@ -297,7 +297,7 @@ This project tries to adhere to [Semantic Versioning][2].
 ## [1.0.0] - 2021-04-16
 
 - SFZ v1 is virtually supported except for a handful of opcodes.
-  Please check https://sfz.tools/sfizz/development/status/
+  Please check https://sfztools.github.io/sfizz/development/status/
   for the up-to-date status of opcode support.
 - It is now possible to build sfizz without relying on libsndfile,
   using a set of libraries. This is now the default build mode.

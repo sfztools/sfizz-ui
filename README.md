@@ -54,14 +54,14 @@ Other than some of sfizz library dependencies, the UI uses:
 [LV2]:                   https://lv2plug.in/
 [GLSL-Color-Spaces]:     https://github.com/tobspr/GLSL-Color-Spaces/
 [stb_image]:             https://github.com/nothings/stb/
-[our website]:           https://sfz.tools/sfizz/
-[our wiki]:              https://sfz.tools/sfizz-wiki/
+[our website]:           https://sfztools.github.io/sfizz/
+[our wiki]:              https://sfztools.github.io/sfizz-wiki/
 [releases]:              https://github.com/sfztools/sfizz/releases/
 [Carla]:                 https://kx.studio/Applications:Carla
 [Ardour]:                https://ardour.org/
-[API]:                   https://sfz.tools/sfizz/api/
+[API]:                   https://sfztools.github.io/sfizz/api/
 [Open Collective]:       https://opencollective.com/sfztools
-[build from source]:     https://sfz.tools/sfizz/development/build/
+[build from source]:     https://sfztools.github.io/sfizz/development/build/
 [Discord Badge Image]:   https://img.shields.io/discord/587748534321807416?label=discord&logo=discord
 [build actions]:         https://github.com/sfztools/sfizz-ui/actions/workflows/build.yml/badge.svg?branch=develop
 [build obs]:             https://build.opensuse.org/projects/home:sfztools:sfizz:develop/packages/sfizz/badge.svg
