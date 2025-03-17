@@ -56,7 +56,7 @@ Other than some of sfizz library dependencies, the UI uses:
 [stb_image]:             https://github.com/nothings/stb/
 [our website]:           https://sfztools.github.io/sfizz/
 [our wiki]:              https://sfztools.github.io/sfizz-wiki/
-[releases]:              https://github.com/sfztools/sfizz/releases/
+[releases]:              https://github.com/sfztools/sfizz-ui/releases/
 [Carla]:                 https://kx.studio/Applications:Carla
 [Ardour]:                https://ardour.org/
 [API]:                   https://sfztools.github.io/sfizz/api/
