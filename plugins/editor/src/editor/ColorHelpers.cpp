@@ -19,9 +19,9 @@ SColorRGB::SColorRGB(const SColorHCY &hcy)
 {
     ColorSpaces::vec3 vhcy{{hcy.h, hcy.c, hcy.y}};
     ColorSpaces::vec3 vrgb = ColorSpaces::hcy_to_rgb(vhcy);
-    r = vrgb[0];
-    g = vrgb[1];
-    b = vrgb[2];
+    r = fmax(0.0f, vrgb[0]);
+    g = fmax(0.0f, vrgb[1]);
+    b = fmax(0.0f, vrgb[2]);
     a = hcy.a;
 }
 
