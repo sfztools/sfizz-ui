@@ -644,7 +644,6 @@ instantiate(const LV2_Descriptor *descriptor,
     }
 
     self->ccmap = sfizz_lv2_ccmap_create(self->map);
-    self->cc_current = new float[sfz::config::numCCs]();
 
     self->synth = sfizz_create_synth();
     self->client = sfizz_create_client(self);
@@ -681,7 +680,6 @@ cleanup(LV2_Handle instance)
     spin_mutex_destroy(self->synth_mutex);
     sfizz_delete_client(self->client);
     sfizz_free(self->synth);
-    delete[] self->cc_current;
     sfizz_lv2_ccmap_free(self->ccmap);
     delete self;
 }

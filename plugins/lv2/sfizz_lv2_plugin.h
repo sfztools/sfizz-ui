@@ -17,6 +17,7 @@
 #include <absl/types/optional.h>
 #include <atomic>
 #include <mutex>
+#include "sfizz/Config.h"
 
 #define DEFAULT_SCALA_FILE  "Contents/Resources/DefaultScale.scl"
 #define DEFAULT_SFZ_FILE    "Contents/Resources/DefaultInstrument.sfz"
@@ -138,7 +139,7 @@ struct sfizz_plugin_t
 
     // Current CC values in the synth (synchronized by `synth_mutex`)
     // updated by hdcc or file load
-    float *cc_current {};
+    float cc_current[sfz::config::numCCs] = {};
     volatile bool resync_cc { false };
 
     // Timing data
