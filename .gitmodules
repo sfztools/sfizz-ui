@@ -15,4 +15,5 @@
 	url = https://github.com/sfztools/sfzt_auwrapper.git
 [submodule "library"]
 	path = library
-	url = https://github.com/sfztools/sfizz.git
+	url = https://github.com/rullopat/sfizz.git
+	branch = mpe
