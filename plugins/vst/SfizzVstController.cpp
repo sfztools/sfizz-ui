@@ -93,6 +93,20 @@ tresult PLUGIN_API SfizzVstControllerNoUi::initialize(FUnknown* context)
         SfizzRange::getForParameter(kPidSustainCancelsRelease).createParameter(
             Steinberg::String("Sustain cancels release"), pid++, nullptr,
             1, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEEnabled).createParameter(
+            Steinberg::String("MPE enabled"), pid++, nullptr,
+            1, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEMasterPitchBendRange).createParameter(
+            Steinberg::String("MPE master pitch bend range"), pid++,
+            Steinberg::String("st"),
+            0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEPerNotePitchBendRange).createParameter(
+            Steinberg::String("MPE per-note pitch bend range"), pid++,
+            Steinberg::String("st"),
+            0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
 
     // MIDI special controllers
     parameters.addParameter(
@@ -283,6 +297,9 @@ tresult PLUGIN_API SfizzVstControllerNoUi::setComponentState(IBStream* stream)
     setParam(kPidFreewheelingSampleQuality, s.freewheelingSampleQuality);
     setParam(kPidFreewheelingOscillatorQuality, s.freewheelingOscillatorQuality);
     setParam(kPidSustainCancelsRelease, s.sustainCancelsRelease);
+    setParam(kPidMPEEnabled, s.mpeEnabled);
+    setParam(kPidMPEMasterPitchBendRange, s.mpeMasterPitchBendRange);
+    setParam(kPidMPEPerNotePitchBendRange, s.mpePerNotePitchBendRange);
 
     uint32 ccLimit = uint32(std::min(s.controllers.size(), size_t(sfz::config::numCCs)));
     for (uint32 cc = 0; cc < ccLimit; ++cc) {

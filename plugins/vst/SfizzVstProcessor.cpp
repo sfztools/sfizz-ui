@@ -16,6 +16,7 @@
 #include "base/source/fstreamer.h"
 #include "base/source/updatehandler.h"
 #include "pluginterfaces/vst/ivstevents.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include <ghc/fs_std.hpp>
 #include <chrono>
@@ -94,7 +95,7 @@ tresult PLUGIN_API SfizzVstProcessor::initialize(FUnknown* context)
     _automationUpdate->addDependent(this);
 
     addAudioOutput(STR16("Audio Output 1"), Vst::SpeakerArr::kStereo);
-    addEventInput(STR16("Event Input"), 1);
+    addEventInput(STR16("Event Input"), 16);
 
     _state = SfizzVstState();
 
@@ -339,6 +340,8 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
     synth.setSampleQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingSampleQuality);
     synth.setOscillatorQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingOscillatorQuality);
     synth.setSustainCancelsRelease(_state.sustainCancelsRelease);
+    synth.setMPEEnabled(_state.mpeEnabled);
+    synth.setMPEPitchBendRange(_state.mpeMasterPitchBendRange, _state.mpePerNotePitchBendRange);
 
     synth.renderBlock(outputs, numFrames, data.numOutputs);
 
@@ -464,11 +467,28 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
     case kPidSustainCancelsRelease:
         _state.sustainCancelsRelease = (range.denormalize(value) > 0.0f);
         break;
+    case kPidMPEEnabled:
+        _state.mpeEnabled = (range.denormalize(value) > 0.0f);
+        break;
+    case kPidMPEMasterPitchBendRange:
+        _state.mpeMasterPitchBendRange = range.denormalize(value);
+        break;
+    case kPidMPEPerNotePitchBendRange:
+        _state.mpePerNotePitchBendRange = range.denormalize(value);
+        break;
     case kPidAftertouch:
-        synth.hdChannelAftertouch(sampleOffset, value);
+        // In MPE mode, channel pressure arrives as per-channel Vst::Events
+        // (see playOrderedEvent); the host's global aftertouch parameter has
+        // no channel and would collapse all member-channel pressure to the
+        // master, so drop it while MPE is enabled.
+        if (!_state.mpeEnabled)
+            synth.hdChannelAftertouch(sampleOffset, value);
         break;
     case kPidPitchBend:
-        synth.hdPitchWheel(sampleOffset, range.denormalize(value));
+        // Same rationale as kPidAftertouch: the global parameter cannot carry
+        // a channel, so per-note pitch bend arrives as Vst::Events instead.
+        if (!_state.mpeEnabled)
+            synth.hdPitchWheel(sampleOffset, range.denormalize(value));
         break;
     case kPidEditorOpen:
         _editorIsOpen = value != 0;
@@ -496,21 +516,22 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.noteOn.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
+        const int channel = event.noteOn.channel;
         if (event.noteOn.velocity <= 0.0f) {
-            synth.noteOff(sampleOffset, pitch, 0);
+            synth.noteOffMPE(sampleOffset, channel, pitch, 0);
             _noteEventsCurrentCycle[pitch] = 0.0f;
         }
         else {
-            synth.hdNoteOn(sampleOffset, pitch, event.noteOn.velocity);
+            synth.hdNoteOnMPE(sampleOffset, channel, pitch, event.noteOn.velocity);
             _noteEventsCurrentCycle[pitch] = event.noteOn.velocity;
         }
         break;
     }
     case Vst::Event::kNoteOffEvent: {
-        int pitch = event.noteOn.pitch;
+        int pitch = event.noteOff.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdNoteOff(sampleOffset, pitch, event.noteOff.velocity);
+        synth.hdNoteOffMPE(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
         _noteEventsCurrentCycle[pitch] = 0.0f;
         break;
     }
@@ -518,7 +539,32 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.polyPressure.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdPolyAftertouch(sampleOffset, pitch, event.polyPressure.pressure);
+        synth.hdPolyAftertouchMPE(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
+        break;
+    }
+    case Vst::Event::kLegacyMIDICCOutEvent: {
+        // Raw MIDI channel-voice messages forwarded by MPE-aware hosts.
+        // For MPE, channel pressure (kAfterTouch) and pitch bend (kPitchBend)
+        // arrive here with the originating MIDI channel set; the global
+        // kPidAftertouch / kPidPitchBend parameter paths can't carry a
+        // channel and are bypassed while MPE is enabled (see playOrderedParameter).
+        const auto& midi = event.midiCCOut;
+        const int channel = midi.channel;
+        const uint8 cn = midi.controlNumber;
+        if (cn == Vst::kAfterTouch) {
+            synth.channelAftertouchMPE(sampleOffset, channel, static_cast<uint8>(midi.value));
+        }
+        else if (cn == Vst::kPitchBend) {
+            const int raw = (int(static_cast<uint8>(midi.value2)) << 7) | int(static_cast<uint8>(midi.value));
+            synth.pitchWheelMPE(sampleOffset, channel, raw - 8192);
+        }
+        else if (cn == Vst::kCtrlPolyPressure) {
+            synth.polyAftertouchMPE(sampleOffset, channel,
+                static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
+        }
+        else if (cn < 128) {
+            synth.ccMPE(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
+        }
         break;
     }
     }

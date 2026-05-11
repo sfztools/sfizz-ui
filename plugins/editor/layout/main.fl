@@ -366,6 +366,36 @@ widget_class mainView {open
         class Checkbox
       }
       Fl_Box {} {
+        label {MPE enabled}
+        xywh {10 225 145 25} align 20
+        class Label
+      }
+      Fl_Check_Button mpeEnabledCheckbox_ {
+        comment {tag=kTagSetMPEEnabled}
+        xywh {180 225 25 25} down_box DOWN_BOX
+        class Checkbox
+      }
+      Fl_Box {} {
+        label {MPE master bend (st)}
+        xywh {10 255 145 25} align 20
+        class Label
+      }
+      Fl_Spinner mpeMasterPitchBendRangeSlider_ {
+        comment {tag=kTagSetMPEMasterPitchBendRange}
+        xywh {180 255 80 25}
+        class ValueMenu
+      }
+      Fl_Box {} {
+        label {MPE per-note bend (st)}
+        xywh {270 255 145 25} align 20
+        class Label
+      }
+      Fl_Spinner mpePerNotePitchBendRangeSlider_ {
+        comment {tag=kTagSetMPEPerNotePitchBendRange}
+        xywh {430 255 80 25}
+        class ValueMenu
+      }
+      Fl_Box {} {
         label {Rendering quality}
         xywh {270 115 110 25} align 20
         class Label

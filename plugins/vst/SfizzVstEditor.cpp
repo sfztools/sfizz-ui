@@ -356,6 +356,15 @@ void SfizzVstEditor::updateParameter(Vst::Parameter* parameterToUpdate)
         case kPidSustainCancelsRelease:
             uiReceiveValue(EditId::SustainCancelsRelease, range.denormalize(value));
             break;
+        case kPidMPEEnabled:
+            uiReceiveValue(EditId::MPEEnabled, range.denormalize(value));
+            break;
+        case kPidMPEMasterPitchBendRange:
+            uiReceiveValue(EditId::MPEMasterPitchBendRange, range.denormalize(value));
+            break;
+        case kPidMPEPerNotePitchBendRange:
+            uiReceiveValue(EditId::MPEPerNotePitchBendRange, range.denormalize(value));
+            break;
         case kPidNumOutputs:
             uiReceiveValue(EditId::PluginOutputs, (int32)range.denormalize(value));
             break;
@@ -427,6 +436,15 @@ void SfizzVstEditor::uiSendValue(EditId id, const EditValue& v)
             break;
         case EditId::SustainCancelsRelease:
             normalizeAndSet(kPidSustainCancelsRelease, v.to_float());
+            break;
+        case EditId::MPEEnabled:
+            normalizeAndSet(kPidMPEEnabled, v.to_float());
+            break;
+        case EditId::MPEMasterPitchBendRange:
+            normalizeAndSet(kPidMPEMasterPitchBendRange, v.to_float());
+            break;
+        case EditId::MPEPerNotePitchBendRange:
+            normalizeAndSet(kPidMPEPerNotePitchBendRange, v.to_float());
             break;
         case EditId::UserFilesDir:
             SfizzPaths::setSfzConfigDefaultPath(fs::u8path(v.to_string()));

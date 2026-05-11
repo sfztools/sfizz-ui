@@ -85,6 +85,22 @@ tresult SfizzVstState::load(IBStream* state)
             return kResultFalse;
     }
 
+    if (version >= 6) {
+        if (!s.readBool(mpeEnabled))
+            return kResultFalse;
+
+        if (!s.readFloat(mpeMasterPitchBendRange))
+            return kResultFalse;
+
+        if (!s.readFloat(mpePerNotePitchBendRange))
+            return kResultFalse;
+    }
+    else {
+        mpeEnabled = defaults.mpeEnabled;
+        mpeMasterPitchBendRange = defaults.mpeMasterPitchBendRange;
+        mpePerNotePitchBendRange = defaults.mpePerNotePitchBendRange;
+    }
+
     if (version >= 4) {
         if (!s.readInt32(lastKeyswitch))
             return kResultFalse;
@@ -162,6 +178,15 @@ tresult SfizzVstState::store(IBStream* state) const
         return kResultFalse;
 
     if (!s.writeBool(sustainCancelsRelease))
+        return kResultFalse;
+
+    if (!s.writeBool(mpeEnabled))
+        return kResultFalse;
+
+    if (!s.writeFloat(mpeMasterPitchBendRange))
+        return kResultFalse;
+
+    if (!s.writeFloat(mpePerNotePitchBendRange))
         return kResultFalse;
 
     if (!s.writeInt32(lastKeyswitch))

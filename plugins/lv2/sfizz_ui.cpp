@@ -405,6 +405,15 @@ port_event_stereo(sfizz_ui_t *self, uint32_t port_index, const void *buffer)
     case SFIZZ_SUSTAIN_CANCELS_RELEASE:
         self->uiReceiveValue(EditId::SustainCancelsRelease, v);
         break;
+    case SFIZZ_MPE_ENABLED:
+        self->uiReceiveValue(EditId::MPEEnabled, v);
+        break;
+    case SFIZZ_MPE_MASTER_PITCH_BEND_RANGE:
+        self->uiReceiveValue(EditId::MPEMasterPitchBendRange, v);
+        break;
+    case SFIZZ_MPE_PER_NOTE_PITCH_BEND_RANGE:
+        self->uiReceiveValue(EditId::MPEPerNotePitchBendRange, v);
+        break;
     }
 }
 
@@ -467,6 +476,15 @@ port_event_multi(sfizz_ui_t *self, uint32_t port_index, const void *buffer)
         break;
     case SFIZZ_MULTI_SUSTAIN_CANCELS_RELEASE:
         self->uiReceiveValue(EditId::SustainCancelsRelease, v);
+        break;
+    case SFIZZ_MULTI_MPE_ENABLED:
+        self->uiReceiveValue(EditId::MPEEnabled, v);
+        break;
+    case SFIZZ_MULTI_MPE_MASTER_PITCH_BEND_RANGE:
+        self->uiReceiveValue(EditId::MPEMasterPitchBendRange, v);
+        break;
+    case SFIZZ_MULTI_MPE_PER_NOTE_PITCH_BEND_RANGE:
+        self->uiReceiveValue(EditId::MPEPerNotePitchBendRange, v);
         break;
     }
 }
@@ -795,6 +813,24 @@ void sfizz_ui_t::uiSendValue(EditId id, const EditValue& v)
             sendFloat(SFIZZ_MULTI_SUSTAIN_CANCELS_RELEASE, v.to_float());
         else
             sendFloat(SFIZZ_SUSTAIN_CANCELS_RELEASE, v.to_float());
+        break;
+    case EditId::MPEEnabled:
+        if (multi_out)
+            sendFloat(SFIZZ_MULTI_MPE_ENABLED, v.to_float());
+        else
+            sendFloat(SFIZZ_MPE_ENABLED, v.to_float());
+        break;
+    case EditId::MPEMasterPitchBendRange:
+        if (multi_out)
+            sendFloat(SFIZZ_MULTI_MPE_MASTER_PITCH_BEND_RANGE, v.to_float());
+        else
+            sendFloat(SFIZZ_MPE_MASTER_PITCH_BEND_RANGE, v.to_float());
+        break;
+    case EditId::MPEPerNotePitchBendRange:
+        if (multi_out)
+            sendFloat(SFIZZ_MULTI_MPE_PER_NOTE_PITCH_BEND_RANGE, v.to_float());
+        else
+            sendFloat(SFIZZ_MPE_PER_NOTE_PITCH_BEND_RANGE, v.to_float());
         break;
     case EditId::SfzFile:
         sendPath(sfizz_sfz_file_uri, v.to_string());

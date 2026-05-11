@@ -442,6 +442,36 @@ midnam:update a lv2:Feature .
     lv2:default 0 ;
     lv2:minimum 0 ;
     lv2:maximum 1 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 23 ;
+    lv2:symbol "mpe_enabled" ;
+    lv2:name "MPE enabled";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    lv2:portProperty lv2:toggled ;
+    lv2:default 0 ;
+    lv2:minimum 0 ;
+    lv2:maximum 1 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 24 ;
+    lv2:symbol "mpe_master_pitch_bend_range" ;
+    lv2:name "MPE master pitch bend range";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    units:unit units:semitone12TET ;
+    lv2:default 2.0 ;
+    lv2:minimum 0.0 ;
+    lv2:maximum 96.0 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 25 ;
+    lv2:symbol "mpe_per_note_pitch_bend_range" ;
+    lv2:name "MPE per-note pitch bend range";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    units:unit units:semitone12TET ;
+    lv2:default 48.0 ;
+    lv2:minimum 0.0 ;
+    lv2:maximum 96.0 ;
   ] ;
 
   rdfs:seeAlso <controllers.ttl> .
@@ -912,6 +942,36 @@ midnam:update a lv2:Feature .
     lv2:default 0 ;
     lv2:minimum 0 ;
     lv2:maximum 1 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 37 ;
+    lv2:symbol "mpe_enabled" ;
+    lv2:name "MPE enabled";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    lv2:portProperty lv2:toggled ;
+    lv2:default 0 ;
+    lv2:minimum 0 ;
+    lv2:maximum 1 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 38 ;
+    lv2:symbol "mpe_master_pitch_bend_range" ;
+    lv2:name "MPE master pitch bend range";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    units:unit units:semitone12TET ;
+    lv2:default 2.0 ;
+    lv2:minimum 0.0 ;
+    lv2:maximum 96.0 ;
+  ] , [
+    a lv2:InputPort, lv2:ControlPort ;
+    lv2:index 39 ;
+    lv2:symbol "mpe_per_note_pitch_bend_range" ;
+    lv2:name "MPE per-note pitch bend range";
+    pg:group <@LV2_PLUGIN_URI@#config> ;
+    units:unit units:semitone12TET ;
+    lv2:default 48.0 ;
+    lv2:minimum 0.0 ;
+    lv2:maximum 96.0 ;
   ] ;
 
   rdfs:seeAlso <controllers.ttl> .

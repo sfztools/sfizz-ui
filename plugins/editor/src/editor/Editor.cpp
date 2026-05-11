@@ -106,6 +106,9 @@ struct Editor::Impl : EditorController::Receiver,
         kTagSetFreewheelingSampleQuality,
         kTagSetFreewheelingOscillatorQuality,
         kTagSetSustainCancelsRelease,
+        kTagSetMPEEnabled,
+        kTagSetMPEMasterPitchBendRange,
+        kTagSetMPEPerNotePitchBendRange,
         kTagSetCCVolume,
         kTagSetCCPan,
         kTagChooseUserFilesDir,
@@ -142,6 +145,9 @@ struct Editor::Impl : EditorController::Receiver,
     SValueMenu *freewheelingSampleQualitySlider_ = nullptr;
     SValueMenu *freewheelingOscillatorQualitySlider_ = nullptr;
     CCheckBox *sustainCancelsReleaseCheckbox_ = nullptr;
+    CCheckBox *mpeEnabledCheckbox_ = nullptr;
+    SValueMenu *mpeMasterPitchBendRangeSlider_ = nullptr;
+    SValueMenu *mpePerNotePitchBendRangeSlider_ = nullptr;
     CTextLabel* keyswitchLabel_ = nullptr;
     CTextLabel* keyswitchInactiveLabel_ = nullptr;
     CTextLabel* keyswitchBadge_ = nullptr;
@@ -495,6 +501,33 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
             if (CControl* checkbox = sustainCancelsReleaseCheckbox_) {
                 checkbox->setValue(value);
                 checkbox->invalid();
+            }
+        }
+        break;
+    case EditId::MPEEnabled:
+        {
+            const bool value = v.to_float();
+            if (CControl* checkbox = mpeEnabledCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+        }
+        break;
+    case EditId::MPEMasterPitchBendRange:
+        {
+            const float value = v.to_float();
+            if (SValueMenu* slider = mpeMasterPitchBendRangeSlider_) {
+                slider->setValue(value);
+                slider->invalid();
+            }
+        }
+        break;
+    case EditId::MPEPerNotePitchBendRange:
+        {
+            const float value = v.to_float();
+            if (SValueMenu* slider = mpePerNotePitchBendRangeSlider_) {
+                slider->setValue(value);
+                slider->invalid();
             }
         }
         break;
@@ -1213,6 +1246,9 @@ void Editor::Impl::createFrameContents()
     adjustMinMaxToEditRange(freewheelingSampleQualitySlider_, EditId::FreewheelingSampleQuality);
     adjustMinMaxToEditRange(freewheelingOscillatorQualitySlider_, EditId::FreewheelingOscillatorQuality);
     adjustMinMaxToEditRange(sustainCancelsReleaseCheckbox_, EditId::SustainCancelsRelease);
+    adjustMinMaxToEditRange(mpeEnabledCheckbox_, EditId::MPEEnabled);
+    adjustMinMaxToEditRange(mpeMasterPitchBendRangeSlider_, EditId::MPEMasterPitchBendRange);
+    adjustMinMaxToEditRange(mpePerNotePitchBendRangeSlider_, EditId::MPEPerNotePitchBendRange);
     adjustMinMaxToEditRange(zoomMenu_, EditId::UIZoom);
 
     for (int value : {1, 2, 4, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256})
@@ -2229,6 +2265,18 @@ void Editor::Impl::valueChanged(CControl* ctl)
 
     case kTagSetSustainCancelsRelease:
         ctrl.uiSendValue(EditId::SustainCancelsRelease, value);
+        break;
+
+    case kTagSetMPEEnabled:
+        ctrl.uiSendValue(EditId::MPEEnabled, value);
+        break;
+
+    case kTagSetMPEMasterPitchBendRange:
+        ctrl.uiSendValue(EditId::MPEMasterPitchBendRange, value);
+        break;
+
+    case kTagSetMPEPerNotePitchBendRange:
+        ctrl.uiSendValue(EditId::MPEPerNotePitchBendRange, value);
         break;
 
     case kTagSetStretchedTuning:

@@ -30,10 +30,13 @@ public:
     int32 freewheelingSampleQuality = 10;
     int32 freewheelingOscillatorQuality = 3;
     bool sustainCancelsRelease = false;
+    bool mpeEnabled = false;
+    float mpeMasterPitchBendRange = 2.0f;
+    float mpePerNotePitchBendRange = 48.0f;
     int32 lastKeyswitch = -1;
     std::vector<absl::optional<float>> controllers;
 
-    static constexpr uint64 currentStateVersion = 5;
+    static constexpr uint64 currentStateVersion = 6;
 
     tresult load(IBStream* state);
     tresult store(IBStream* state) const;

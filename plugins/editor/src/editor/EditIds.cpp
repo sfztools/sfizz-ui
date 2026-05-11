@@ -36,6 +36,12 @@ EditRange EditRange::get(EditId id)
         return { 3, 0, 3 };
     case EditId::SustainCancelsRelease:
         return { 0, 0, 1 };
+    case EditId::MPEEnabled:
+        return { 0, 0, 1 };
+    case EditId::MPEMasterPitchBendRange:
+        return { 2, 0, 96 };
+    case EditId::MPEPerNotePitchBendRange:
+        return { 48, 0, 96 };
     case EditId::UIActivePanel:
         return { 0, 0, 255 };
     case EditId::UIZoom:
