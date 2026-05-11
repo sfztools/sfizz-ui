@@ -387,12 +387,12 @@ widget_class mainView {open
       }
       Fl_Box {} {
         label {MPE per-note bend (st)}
-        xywh {270 255 145 25} align 20
+        xywh {10 285 145 25} align 20
         class Label
       }
       Fl_Spinner mpePerNotePitchBendRangeSlider_ {
         comment {tag=kTagSetMPEPerNotePitchBendRange}
-        xywh {430 255 80 25}
+        xywh {180 285 80 25}
         class ValueMenu
       }
       Fl_Box {} {
