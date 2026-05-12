@@ -53,6 +53,14 @@ enum {
     kPidMPECC74Ch1,
     kPidMPECC74Ch15 = kPidMPECC74Ch1 + 14,
 
+    // SMPL-46 MPE auto-config opt-outs. The engine parses RPN 6 (MCM)
+    // and RPN 0 (Pitch Bend Sensitivity) per MPE 1.0; these two flags
+    // let the user veto the bend-range updates without affecting the
+    // MCM enable path. Placed at the end of the parameter block so the
+    // pre-existing kPid values don't shift.
+    kPidMPEMasterBendIgnoreRpn,
+    kPidMPEPerNoteBendIgnoreRpn,
+
     kNumParameters,
 };
 
@@ -112,6 +120,10 @@ struct SfizzRange {
             return {2.0, 0.0, 96.0};
         case kPidMPEPerNotePitchBendRange:
             return {48.0, 0.0, 96.0};
+        case kPidMPEMasterBendIgnoreRpn:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEPerNoteBendIgnoreRpn:
+            return {0.0, 0.0, 1.0};
         case kPidAftertouch:
             return {0.0, 0.0, 1.0};
         case kPidPitchBend:

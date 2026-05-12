@@ -42,6 +42,10 @@ EditRange EditRange::get(EditId id)
         return { 2, 0, 96 };
     case EditId::MPEPerNotePitchBendRange:
         return { 48, 0, 96 };
+    case EditId::MPEMasterBendIgnoreRpn:
+        return { 0, 0, 1 };
+    case EditId::MPEPerNoteBendIgnoreRpn:
+        return { 0, 0, 1 };
     case EditId::UIActivePanel:
         return { 0, 0, 255 };
     case EditId::UIZoom:

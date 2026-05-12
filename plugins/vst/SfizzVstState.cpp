@@ -101,6 +101,18 @@ tresult SfizzVstState::load(IBStream* state)
         mpePerNotePitchBendRange = defaults.mpePerNotePitchBendRange;
     }
 
+    if (version >= 7) {
+        if (!s.readBool(mpeMasterBendIgnoreRpn))
+            return kResultFalse;
+
+        if (!s.readBool(mpePerNoteBendIgnoreRpn))
+            return kResultFalse;
+    }
+    else {
+        mpeMasterBendIgnoreRpn = defaults.mpeMasterBendIgnoreRpn;
+        mpePerNoteBendIgnoreRpn = defaults.mpePerNoteBendIgnoreRpn;
+    }
+
     if (version >= 4) {
         if (!s.readInt32(lastKeyswitch))
             return kResultFalse;
@@ -187,6 +199,12 @@ tresult SfizzVstState::store(IBStream* state) const
         return kResultFalse;
 
     if (!s.writeFloat(mpePerNotePitchBendRange))
+        return kResultFalse;
+
+    if (!s.writeBool(mpeMasterBendIgnoreRpn))
+        return kResultFalse;
+
+    if (!s.writeBool(mpePerNoteBendIgnoreRpn))
         return kResultFalse;
 
     if (!s.writeInt32(lastKeyswitch))

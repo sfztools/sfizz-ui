@@ -183,6 +183,18 @@ tresult PLUGIN_API SfizzVstControllerNoUi::initialize(FUnknown* context)
                 title, cc74Id, nullptr, 0,
                 Vst::ParameterInfo::kCanAutomate, Vst::kRootUnitId, shortTitle));
     }
+
+    // SMPL-46 MPE auto-config opt-outs. Same enum-as-tag convention as the
+    // per-channel block above so the playOrderedParameter switch can match
+    // on the enum value directly.
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEMasterBendIgnoreRpn).createParameter(
+            Steinberg::String("Ignore MPE master bend RPN"), kPidMPEMasterBendIgnoreRpn,
+            nullptr, 1, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEPerNoteBendIgnoreRpn).createParameter(
+            Steinberg::String("Ignore MPE per-note bend RPN"), kPidMPEPerNoteBendIgnoreRpn,
+            nullptr, 1, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
     (void)pid;
 
     // Initial MIDI mapping for the master / fallback channel. Per-channel
@@ -479,6 +491,8 @@ tresult PLUGIN_API SfizzVstControllerNoUi::setComponentState(IBStream* stream)
     setParam(kPidMPEEnabled, s.mpeEnabled);
     setParam(kPidMPEMasterPitchBendRange, s.mpeMasterPitchBendRange);
     setParam(kPidMPEPerNotePitchBendRange, s.mpePerNotePitchBendRange);
+    setParam(kPidMPEMasterBendIgnoreRpn, s.mpeMasterBendIgnoreRpn);
+    setParam(kPidMPEPerNoteBendIgnoreRpn, s.mpePerNoteBendIgnoreRpn);
 
     uint32 ccLimit = uint32(std::min(s.controllers.size(), size_t(sfz::config::numCCs)));
     for (uint32 cc = 0; cc < ccLimit; ++cc) {

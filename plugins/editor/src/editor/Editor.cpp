@@ -109,6 +109,8 @@ struct Editor::Impl : EditorController::Receiver,
         kTagSetMPEEnabled,
         kTagSetMPEMasterPitchBendRange,
         kTagSetMPEPerNotePitchBendRange,
+        kTagSetMPEMasterBendIgnoreRpn,
+        kTagSetMPEPerNoteBendIgnoreRpn,
         kTagSetCCVolume,
         kTagSetCCPan,
         kTagChooseUserFilesDir,
@@ -148,6 +150,8 @@ struct Editor::Impl : EditorController::Receiver,
     CCheckBox *mpeEnabledCheckbox_ = nullptr;
     SValueMenu *mpeMasterPitchBendRangeSlider_ = nullptr;
     SValueMenu *mpePerNotePitchBendRangeSlider_ = nullptr;
+    CCheckBox *mpeMasterBendIgnoreRpnCheckbox_ = nullptr;
+    CCheckBox *mpePerNoteBendIgnoreRpnCheckbox_ = nullptr;
     CTextLabel* keyswitchLabel_ = nullptr;
     CTextLabel* keyswitchInactiveLabel_ = nullptr;
     CTextLabel* keyswitchBadge_ = nullptr;
@@ -528,6 +532,24 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
             if (SValueMenu* slider = mpePerNotePitchBendRangeSlider_) {
                 slider->setValue(value);
                 slider->invalid();
+            }
+        }
+        break;
+    case EditId::MPEMasterBendIgnoreRpn:
+        {
+            const bool value = v.to_float();
+            if (CControl* checkbox = mpeMasterBendIgnoreRpnCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+        }
+        break;
+    case EditId::MPEPerNoteBendIgnoreRpn:
+        {
+            const bool value = v.to_float();
+            if (CControl* checkbox = mpePerNoteBendIgnoreRpnCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
             }
         }
         break;
@@ -1249,6 +1271,8 @@ void Editor::Impl::createFrameContents()
     adjustMinMaxToEditRange(mpeEnabledCheckbox_, EditId::MPEEnabled);
     adjustMinMaxToEditRange(mpeMasterPitchBendRangeSlider_, EditId::MPEMasterPitchBendRange);
     adjustMinMaxToEditRange(mpePerNotePitchBendRangeSlider_, EditId::MPEPerNotePitchBendRange);
+    adjustMinMaxToEditRange(mpeMasterBendIgnoreRpnCheckbox_, EditId::MPEMasterBendIgnoreRpn);
+    adjustMinMaxToEditRange(mpePerNoteBendIgnoreRpnCheckbox_, EditId::MPEPerNoteBendIgnoreRpn);
     adjustMinMaxToEditRange(zoomMenu_, EditId::UIZoom);
 
     for (int value : {1, 2, 4, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256})
@@ -2277,6 +2301,14 @@ void Editor::Impl::valueChanged(CControl* ctl)
 
     case kTagSetMPEPerNotePitchBendRange:
         ctrl.uiSendValue(EditId::MPEPerNotePitchBendRange, value);
+        break;
+
+    case kTagSetMPEMasterBendIgnoreRpn:
+        ctrl.uiSendValue(EditId::MPEMasterBendIgnoreRpn, value);
+        break;
+
+    case kTagSetMPEPerNoteBendIgnoreRpn:
+        ctrl.uiSendValue(EditId::MPEPerNoteBendIgnoreRpn, value);
         break;
 
     case kTagSetStretchedTuning:

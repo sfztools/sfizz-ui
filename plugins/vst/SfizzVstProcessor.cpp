@@ -342,6 +342,8 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
     synth.setSustainCancelsRelease(_state.sustainCancelsRelease);
     synth.setMPEEnabled(_state.mpeEnabled);
     synth.setMPEPitchBendRange(_state.mpeMasterPitchBendRange, _state.mpePerNotePitchBendRange);
+    synth.setMPEMasterBendAutoConfigEnabled(!_state.mpeMasterBendIgnoreRpn);
+    synth.setMPEPerNoteBendAutoConfigEnabled(!_state.mpePerNoteBendIgnoreRpn);
 
     synth.renderBlock(outputs, numFrames, data.numOutputs);
 
@@ -475,6 +477,12 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
         break;
     case kPidMPEPerNotePitchBendRange:
         _state.mpePerNotePitchBendRange = range.denormalize(value);
+        break;
+    case kPidMPEMasterBendIgnoreRpn:
+        _state.mpeMasterBendIgnoreRpn = (range.denormalize(value) > 0.0f);
+        break;
+    case kPidMPEPerNoteBendIgnoreRpn:
+        _state.mpePerNoteBendIgnoreRpn = (range.denormalize(value) > 0.0f);
         break;
     case kPidAftertouch:
         // Forward as master-channel pressure (channel 0). In MPE this is the

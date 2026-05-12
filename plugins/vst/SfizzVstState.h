@@ -33,10 +33,15 @@ public:
     bool mpeEnabled = false;
     float mpeMasterPitchBendRange = 2.0f;
     float mpePerNotePitchBendRange = 48.0f;
+    // SMPL-46: opt-outs for MPE auto-config (RPN 0 bend-range updates).
+    // Stored with "Ignore" semantics so the persisted value matches the
+    // editor's checkbox label; defaults to false (accept RPN).
+    bool mpeMasterBendIgnoreRpn = false;
+    bool mpePerNoteBendIgnoreRpn = false;
     int32 lastKeyswitch = -1;
     std::vector<absl::optional<float>> controllers;
 
-    static constexpr uint64 currentStateVersion = 6;
+    static constexpr uint64 currentStateVersion = 7;
 
     tresult load(IBStream* state);
     tresult store(IBStream* state) const;

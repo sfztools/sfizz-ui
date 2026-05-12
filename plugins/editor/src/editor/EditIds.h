@@ -26,6 +26,8 @@ enum class EditId : int {
     MPEEnabled,
     MPEMasterPitchBendRange,
     MPEPerNotePitchBendRange,
+    MPEMasterBendIgnoreRpn,
+    MPEPerNoteBendIgnoreRpn,
     CanEditUserFilesDir,
     UserFilesDir,
     FallbackFilesDir,
