@@ -517,10 +517,12 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         if (event.noteOn.velocity <= 0.0f) {
             synth.noteOffMPE(sampleOffset, channel, pitch, 0);
             _noteEventsCurrentCycle[pitch] = 0.0f;
+            clearActiveNote(event.noteOn.noteId);
         }
         else {
             synth.hdNoteOnMPE(sampleOffset, channel, pitch, event.noteOn.velocity);
             _noteEventsCurrentCycle[pitch] = event.noteOn.velocity;
+            registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
         }
         break;
     }
@@ -530,6 +532,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             break;
         synth.hdNoteOffMPE(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
         _noteEventsCurrentCycle[pitch] = 0.0f;
+        clearActiveNote(event.noteOff.noteId);
         break;
     }
     case Vst::Event::kPolyPressureEvent: {
@@ -537,6 +540,47 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         if (pitch < 0 || pitch >= 128)
             break;
         synth.hdPolyAftertouchMPE(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
+        break;
+    }
+    case Vst::Event::kNoteExpressionValueEvent: {
+        const auto& nev = event.noteExpressionValue;
+        const int channel = lookupChannelForNoteId(nev.noteId);
+        if (channel < 0)
+            break; // unknown noteId; can't correlate to a member channel
+        switch (nev.typeId) {
+        case Vst::kTuningTypeID: {
+            // VST3 plain range: 0 = -120 st, 0.5 = no bend, 1 = +120 st.
+            // sfizz expects a normalized value in [-1, 1] that maps to
+            // ±_state.mpePerNotePitchBendRange semitones.
+            const float semitones = (static_cast<float>(nev.value) - 0.5f) * 240.0f;
+            const float perNoteRange = _state.mpePerNotePitchBendRange;
+            if (perNoteRange <= 0.0f)
+                break;
+            float ratio = semitones / perNoteRange;
+            if (ratio > 1.0f) ratio = 1.0f;
+            else if (ratio < -1.0f) ratio = -1.0f;
+            synth.hdPitchWheelMPE(sampleOffset, channel, ratio);
+            break;
+        }
+        case Vst::kVolumeTypeID: {
+            // Map normalized [0, 1] linearly to channel pressure [0, 1].
+            float v = static_cast<float>(nev.value);
+            if (v < 0.0f) v = 0.0f;
+            else if (v > 1.0f) v = 1.0f;
+            synth.hdChannelAftertouchMPE(sampleOffset, channel, v);
+            break;
+        }
+        case Vst::kBrightnessTypeID: {
+            // Map normalized [0, 1] to CC74 [0, 1] (sfizz hd-CC).
+            float v = static_cast<float>(nev.value);
+            if (v < 0.0f) v = 0.0f;
+            else if (v > 1.0f) v = 1.0f;
+            synth.hdccMPE(sampleOffset, channel, 74, v);
+            break;
+        }
+        default:
+            break;
+        }
         break;
     }
     case Vst::Event::kLegacyMIDICCOutEvent: {
@@ -564,7 +608,58 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         }
         break;
     }
+    default:
+        break;
     }
+}
+
+void SfizzVstProcessor::registerActiveNote(int32 noteId, int16 channel) noexcept
+{
+    // Refuse to track a noteId == kFreeNoteId (impossible per the VST3 spec but
+    // would corrupt our sentinel). -1 ("host doesn't track") is allowed in but
+    // collides on lookup; the host will be self-consistent for a given session.
+    if (noteId == kFreeNoteId)
+        return;
+    // Replace an existing entry with the same noteId, otherwise fill first free slot.
+    int freeSlot = -1;
+    for (size_t i = 0; i < _activeNotes.size(); ++i) {
+        if (_activeNotes[i].noteId == noteId) {
+            _activeNotes[i].channel = channel;
+            return;
+        }
+        if (freeSlot < 0 && _activeNotes[i].noteId == kFreeNoteId)
+            freeSlot = static_cast<int>(i);
+    }
+    if (freeSlot >= 0) {
+        _activeNotes[freeSlot].noteId = noteId;
+        _activeNotes[freeSlot].channel = channel;
+    }
+    // If the table is full we silently drop the registration; the worst case
+    // is that subsequent NoteExpression events for that note won't dispatch.
+}
+
+void SfizzVstProcessor::clearActiveNote(int32 noteId) noexcept
+{
+    if (noteId == kFreeNoteId)
+        return;
+    for (auto& entry : _activeNotes) {
+        if (entry.noteId == noteId) {
+            entry.noteId = kFreeNoteId;
+            entry.channel = 0;
+            return;
+        }
+    }
+}
+
+int SfizzVstProcessor::lookupChannelForNoteId(int32 noteId) const noexcept
+{
+    if (noteId == kFreeNoteId)
+        return -1;
+    for (const auto& entry : _activeNotes) {
+        if (entry.noteId == noteId)
+            return entry.channel;
+    }
+    return -1;
 }
 
 void SfizzVstProcessor::processMessagesFromUi()

@@ -91,6 +91,23 @@ private:
     // note event tracking
     std::array<float, 128> _noteEventsCurrentCycle; // 0: off, >0: on, <0: no change
 
+    // noteId -> channel correlation for VST3 NoteExpressionValueEvent dispatch.
+    // VST3 expression events key by noteId only; we need the originating note's
+    // channel to dispatch to the right MPE engine method. Fixed-size table,
+    // linear scan, RT-safe. Slot is free when noteId == kFreeNoteId.
+    // (-1 is a valid host-doesn't-track sentinel and must not collide.)
+    static constexpr int32 kFreeNoteId = -2;
+    static constexpr size_t kMaxActiveNotes = 64;
+    struct ActiveNoteEntry {
+        int32 noteId = kFreeNoteId;
+        int16 channel = 0;
+    };
+    std::array<ActiveNoteEntry, kMaxActiveNotes> _activeNotes {};
+
+    void registerActiveNote(int32 noteId, int16 channel) noexcept;
+    void clearActiveNote(int32 noteId) noexcept;
+    int lookupChannelForNoteId(int32 noteId) const noexcept;
+
     // worker and thread sync
     std::thread _worker;
     volatile bool _workRunning = false;

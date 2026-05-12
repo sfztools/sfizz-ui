@@ -12,6 +12,7 @@
 #include "base/source/fstreamer.h"
 #include "base/source/fstring.h"
 #include "base/source/updatehandler.h"
+#include "pluginterfaces/base/ustring.h"
 #include <absl/strings/match.h>
 #include <ghc/fs_std.hpp>
 #include <atomic>
@@ -219,6 +220,124 @@ tresult PLUGIN_API SfizzVstControllerNoUi::getKeyswitchInfo(int32 busIndex, int1
         return kResultFalse;
 
     info = keyswitches_[keySwitchIndex];
+    return kResultTrue;
+}
+
+// INoteExpressionController
+//
+// Hosts that route MPE-style per-note expression to VST3 instruments (Ableton
+// Live 12 in particular) only deliver per-note pitch / pressure / Y as
+// NoteExpressionValueEvents to plug-ins that declare expression types here.
+// Without this declaration the host falls back to a non-MPE path: pressure
+// arrives as plain kPolyPressureEvent on the master channel and per-note
+// pitch bend is dropped on the floor.
+//
+// We declare the three predefined types that map cleanly to MPE channel
+// data: tuning (per-note pitch, bipolar around 0.5), volume (per-note
+// pressure, unipolar), and brightness (Y / CC74-style timbre, unipolar
+// centered at 0.5). The event-handling side (SfizzVstProcessor) consumes
+// kNoteExpressionValueEvent in playOrderedEvent.
+
+int32 PLUGIN_API SfizzVstControllerNoUi::getNoteExpressionCount(int32 busIndex, int16 channel)
+{
+    (void)channel;
+    if (busIndex != 0)
+        return 0;
+    return 3;
+}
+
+tresult PLUGIN_API SfizzVstControllerNoUi::getNoteExpressionInfo(int32 busIndex, int16 channel, int32 noteExpressionIndex, Vst::NoteExpressionTypeInfo& info)
+{
+    (void)channel;
+    if (busIndex != 0)
+        return kResultFalse;
+
+    info = Vst::NoteExpressionTypeInfo{};
+    info.unitId = -1;
+    info.associatedParameterId = 0;
+
+    auto setStrings = [&](const char* title, const char* shortTitle, const char* units) {
+        UString(info.title, 128).fromAscii(title);
+        UString(info.shortTitle, 128).fromAscii(shortTitle);
+        UString(info.units, 128).fromAscii(units);
+    };
+
+    switch (noteExpressionIndex) {
+    case 0:
+        info.typeId = Vst::kTuningTypeID;
+        info.valueDesc.defaultValue = 0.5;
+        info.valueDesc.minimum = 0.0;
+        info.valueDesc.maximum = 1.0;
+        info.valueDesc.stepCount = 0;
+        info.flags = Vst::NoteExpressionTypeInfo::kIsBipolar |
+                     Vst::NoteExpressionTypeInfo::kIsAbsolute;
+        setStrings("Tuning", "Tun", "st");
+        return kResultTrue;
+    case 1:
+        info.typeId = Vst::kVolumeTypeID;
+        info.valueDesc.defaultValue = 0.0;
+        info.valueDesc.minimum = 0.0;
+        info.valueDesc.maximum = 1.0;
+        info.valueDesc.stepCount = 0;
+        info.flags = Vst::NoteExpressionTypeInfo::kIsAbsolute;
+        setStrings("Pressure", "Prs", "");
+        return kResultTrue;
+    case 2:
+        info.typeId = Vst::kBrightnessTypeID;
+        info.valueDesc.defaultValue = 0.5;
+        info.valueDesc.minimum = 0.0;
+        info.valueDesc.maximum = 1.0;
+        info.valueDesc.stepCount = 0;
+        info.flags = Vst::NoteExpressionTypeInfo::kIsAbsolute;
+        setStrings("Brightness", "Brt", "");
+        return kResultTrue;
+    }
+    return kResultFalse;
+}
+
+tresult PLUGIN_API SfizzVstControllerNoUi::getNoteExpressionStringByValue(int32 busIndex, int16 channel, Vst::NoteExpressionTypeID id, Vst::NoteExpressionValue valueNormalized, Vst::String128 string)
+{
+    (void)busIndex; (void)channel; (void)id; (void)valueNormalized; (void)string;
+    return kResultFalse;
+}
+
+tresult PLUGIN_API SfizzVstControllerNoUi::getNoteExpressionValueByString(int32 busIndex, int16 channel, Vst::NoteExpressionTypeID id, const Vst::TChar* string, Vst::NoteExpressionValue& valueNormalized)
+{
+    (void)busIndex; (void)channel; (void)id; (void)string; (void)valueNormalized;
+    return kResultFalse;
+}
+
+// INoteExpressionPhysicalUIMapping
+//
+// Declaring INoteExpressionController is necessary but not sufficient: Ableton
+// Live 12 only routes MPE to plug-ins that *also* declare a physical-UI
+// mapping, which tells the host how its MPE physical inputs (X = pitch bend,
+// Y = CC74 / brightness, pressure = aftertouch) map to the plug-in's
+// NoteExpression typeIds. Without this interface Live falls back to plain
+// polypressure on the master channel and drops per-note pitch bend.
+
+tresult PLUGIN_API SfizzVstControllerNoUi::getPhysicalUIMapping(int32 busIndex, int16 channel, Vst::PhysicalUIMapList& list)
+{
+    (void)channel;
+    if (busIndex != 0)
+        return kResultFalse;
+
+    for (uint32 i = 0; i < list.count; ++i) {
+        switch (list.map[i].physicalUITypeID) {
+        case Vst::kPUIXMovement:
+            list.map[i].noteExpressionTypeID = Vst::kTuningTypeID;
+            break;
+        case Vst::kPUIYMovement:
+            list.map[i].noteExpressionTypeID = Vst::kBrightnessTypeID;
+            break;
+        case Vst::kPUIPressure:
+            list.map[i].noteExpressionTypeID = Vst::kVolumeTypeID;
+            break;
+        default:
+            list.map[i].noteExpressionTypeID = Vst::kInvalidTypeID;
+            break;
+        }
+    }
     return kResultTrue;
 }
 
