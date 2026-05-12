@@ -340,8 +340,24 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
     synth.setSampleQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingSampleQuality);
     synth.setOscillatorQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingOscillatorQuality);
     synth.setSustainCancelsRelease(_state.sustainCancelsRelease);
-    synth.setMPEEnabled(_state.mpeEnabled);
-    synth.setMPEPitchBendRange(_state.mpeMasterPitchBendRange, _state.mpePerNotePitchBendRange);
+    // Only push the engine-writable MPE fields when the wrapper state actually
+    // changed since the last push. Otherwise an MCM / RPN 0 sequence that
+    // auto-configures the engine on one block gets clobbered on the very next
+    // block, because the wrapper would re-send its stale state. Host or UI
+    // edits still flow through — they update _state, which differs from the
+    // last-pushed snapshot, triggering one targeted push.
+    if (_state.mpeEnabled != _lastPushedMpeEnabled) {
+        synth.setMPEEnabled(_state.mpeEnabled);
+        _lastPushedMpeEnabled = _state.mpeEnabled;
+    }
+    if (_state.mpeMasterPitchBendRange != _lastPushedMpeMasterPitchBendRange
+        || _state.mpePerNotePitchBendRange != _lastPushedMpePerNotePitchBendRange) {
+        synth.setMPEPitchBendRange(_state.mpeMasterPitchBendRange, _state.mpePerNotePitchBendRange);
+        _lastPushedMpeMasterPitchBendRange = _state.mpeMasterPitchBendRange;
+        _lastPushedMpePerNotePitchBendRange = _state.mpePerNotePitchBendRange;
+    }
+    // Opt-out flags are wrapper-write-only — engine never modifies them — so a
+    // per-block push is harmless and avoids the bookkeeping above.
     synth.setMPEMasterBendAutoConfigEnabled(!_state.mpeMasterBendIgnoreRpn);
     synth.setMPEPerNoteBendAutoConfigEnabled(!_state.mpePerNoteBendIgnoreRpn);
 

@@ -65,6 +65,18 @@ private:
     SfizzVstState _state;
     float _currentStretchedTuning = 0;
 
+    // Last wrapper-state values pushed to the synth for the MPE fields the
+    // engine can itself write back to (via RPN 6 / RPN 0 auto-config). The
+    // per-block "push wrapper state → synth" loop in process() is gated on
+    // a diff against these so a host or UI change still propagates while an
+    // engine-side auto-config update isn't overwritten on the next block.
+    // Initial values match the SfizzVstState defaults, which also match the
+    // engine defaults — so on the very first block no spurious push happens
+    // for instances that load with defaults.
+    bool _lastPushedMpeEnabled { false };
+    float _lastPushedMpeMasterPitchBendRange { 2.0f };
+    float _lastPushedMpePerNotePitchBendRange { 48.0f };
+
     // whether allowed to perform events (owns the processing lock)
     bool _canPerformEventsAndParameters {};
 
