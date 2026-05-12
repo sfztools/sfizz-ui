@@ -363,6 +363,45 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
 
     synth.renderBlock(outputs, numFrames, data.numOutputs);
 
+    // Feed back any engine-driven MPE state changes to the host. The engine
+    // can flip mpeEnabled / the bend ranges from incoming MIDI (RPN 6 MCM /
+    // RPN 0 Pitch Bend Sensitivity). Without this round-trip, _state stays
+    // pinned to the pre-MIDI values: the UI would keep showing the old
+    // value, project saves would persist the pre-MCM state, and host
+    // automation lanes would never learn about the change. Updating
+    // _lastPushed* alongside _state keeps the next block's wrapper→engine
+    // dirty check quiet — we've just synced both sides to the engine.
+    {
+        const bool engineMpeEnabled = synth.getMPEEnabled();
+        const float engineMasterRange = synth.getMPEMasterPitchBendRange();
+        const float enginePerNoteRange = synth.getMPEPerNotePitchBendRange();
+        Vst::IParameterChanges* outChanges = data.outputParameterChanges;
+        auto reportParam = [outChanges](Vst::ParamID pid, float plainValue) {
+            if (!outChanges)
+                return;
+            int32 index;
+            if (Vst::IParamValueQueue* vq = outChanges->addParameterData(pid, index)) {
+                const float norm = SfizzRange::getForParameter(pid).normalize(plainValue);
+                vq->addPoint(0, norm, index);
+            }
+        };
+        if (engineMpeEnabled != _state.mpeEnabled) {
+            _state.mpeEnabled = engineMpeEnabled;
+            _lastPushedMpeEnabled = engineMpeEnabled;
+            reportParam(kPidMPEEnabled, engineMpeEnabled ? 1.0f : 0.0f);
+        }
+        if (engineMasterRange != _state.mpeMasterPitchBendRange) {
+            _state.mpeMasterPitchBendRange = engineMasterRange;
+            _lastPushedMpeMasterPitchBendRange = engineMasterRange;
+            reportParam(kPidMPEMasterPitchBendRange, engineMasterRange);
+        }
+        if (enginePerNoteRange != _state.mpePerNotePitchBendRange) {
+            _state.mpePerNotePitchBendRange = enginePerNoteRange;
+            _lastPushedMpePerNotePitchBendRange = enginePerNoteRange;
+            reportParam(kPidMPEPerNotePitchBendRange, enginePerNoteRange);
+        }
+    }
+
     // Update levels, if editor is open, otherwise skip
     RMSFollower& rmsFollower = _rmsFollower;
     if (_editorIsOpen) {
