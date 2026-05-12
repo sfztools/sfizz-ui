@@ -477,18 +477,15 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
         _state.mpePerNotePitchBendRange = range.denormalize(value);
         break;
     case kPidAftertouch:
-        // In MPE mode, channel pressure arrives as per-channel Vst::Events
-        // (see playOrderedEvent); the host's global aftertouch parameter has
-        // no channel and would collapse all member-channel pressure to the
-        // master, so drop it while MPE is enabled.
-        if (!_state.mpeEnabled)
-            synth.hdChannelAftertouch(sampleOffset, value);
+        // Forward as master-channel pressure (channel 0). In MPE this is the
+        // master pressure per the MPE 1.0 spec; per-channel pressure for member
+        // channels comes through other paths (Vst::Events with channel set,
+        // NoteExpression events, or per-channel paramIDs).
+        synth.hdChannelAftertouch(sampleOffset, value);
         break;
     case kPidPitchBend:
-        // Same rationale as kPidAftertouch: the global parameter cannot carry
-        // a channel, so per-note pitch bend arrives as Vst::Events instead.
-        if (!_state.mpeEnabled)
-            synth.hdPitchWheel(sampleOffset, range.denormalize(value));
+        // Same rationale as kPidAftertouch: forward as master-channel bend.
+        synth.hdPitchWheel(sampleOffset, range.denormalize(value));
         break;
     case kPidEditorOpen:
         _editorIsOpen = value != 0;
