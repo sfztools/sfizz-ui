@@ -496,6 +496,21 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
             synth.automateHdcc(sampleOffset, ccNumber, value);
             _state.controllers[ccNumber] = value;
         }
+        else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15) {
+            // Per-member-channel pitch bend. SfizzRange denormalizes [0, 1]
+            // host-normalized to [-1, +1] plain, which is sfizz's normalized
+            // bend (mapped to ±mpePerNotePitchBendRange semitones).
+            const int channel = static_cast<int>(id - kPidMPEPitchBendCh1) + 1;
+            synth.hdPitchWheelMPE(sampleOffset, channel, range.denormalize(value));
+        }
+        else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15) {
+            const int channel = static_cast<int>(id - kPidMPEAftertouchCh1) + 1;
+            synth.hdChannelAftertouchMPE(sampleOffset, channel, value);
+        }
+        else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15) {
+            const int channel = static_cast<int>(id - kPidMPECC74Ch1) + 1;
+            synth.hdccMPE(sampleOffset, channel, 74, value);
+        }
         break;
     }
 }

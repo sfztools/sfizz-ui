@@ -149,7 +149,44 @@ tresult PLUGIN_API SfizzVstControllerNoUi::initialize(FUnknown* context)
             Steinberg::String("Editor open"), pid++, nullptr,
             0, Vst::ParameterInfo::kIsReadOnly|Vst::ParameterInfo::kIsHidden, Vst::kRootUnitId));
 
-    // Initial MIDI mapping
+    // Per-MPE-member-channel pitch bend / aftertouch / CC74. See the comment
+    // above kPidMPEPitchBendCh1 in SfizzVstParameters.h. These parameters use
+    // their enum value as the host-facing tag (not the pid++ counter) so the
+    // dispatch in SfizzVstProcessor::playOrderedParameter can match on the
+    // contiguous-by-axis enum range directly. (The pid counter has diverged
+    // from the enum since kPidNumOutputs / kPidLevelLast, which are sentinels
+    // and not registered as actual parameters; for the older params that
+    // doesn't matter because they're either pid-aligned or read-only.)
+    constexpr int32 kMPEMemberChannels = 15;
+    for (int ch = 1; ch <= kMPEMemberChannels; ++ch) {
+        Steinberg::String title;
+        Steinberg::String shortTitle;
+        const Vst::ParamID pitchId = kPidMPEPitchBendCh1 + (ch - 1);
+        const Vst::ParamID aftertouchId = kPidMPEAftertouchCh1 + (ch - 1);
+        const Vst::ParamID cc74Id = kPidMPECC74Ch1 + (ch - 1);
+        title.printf("MPE Pitch Bend ch%d", ch);
+        shortTitle.printf("PB%d", ch);
+        parameters.addParameter(
+            SfizzRange::getForParameter(pitchId).createParameter(
+                title, pitchId, nullptr, 0,
+                Vst::ParameterInfo::kCanAutomate, Vst::kRootUnitId, shortTitle));
+        title.printf("MPE Aftertouch ch%d", ch);
+        shortTitle.printf("AT%d", ch);
+        parameters.addParameter(
+            SfizzRange::getForParameter(aftertouchId).createParameter(
+                title, aftertouchId, nullptr, 0,
+                Vst::ParameterInfo::kCanAutomate, Vst::kRootUnitId, shortTitle));
+        title.printf("MPE CC74 ch%d", ch);
+        shortTitle.printf("Y%d", ch);
+        parameters.addParameter(
+            SfizzRange::getForParameter(cc74Id).createParameter(
+                title, cc74Id, nullptr, 0,
+                Vst::ParameterInfo::kCanAutomate, Vst::kRootUnitId, shortTitle));
+    }
+    (void)pid;
+
+    // Initial MIDI mapping for the master / fallback channel. Per-channel
+    // overrides for member channels happen in getMidiControllerAssignment.
     for (int32 i = 0; i < Vst::kCountCtrlNumber; ++i) {
         Vst::ParamID id = Vst::kNoParamId;
         switch (i) {
@@ -190,6 +227,29 @@ tresult PLUGIN_API SfizzVstControllerNoUi::getMidiControllerAssignment(int32 bus
     if (midiControllerNumber < 0 || midiControllerNumber >= Vst::kCountCtrlNumber) {
         id = Vst::kNoParamId;
         return kResultFalse;
+    }
+
+    // For MPE member channels (1..15), route per-channel pitch bend /
+    // aftertouch / CC74 to their dedicated parameter IDs so the host can
+    // deliver each note's expression independently. Other controllers on
+    // member channels, and everything on the master channel (0), fall
+    // through to the global mapping.
+    if (channel >= 1 && channel <= 15) {
+        const int chIdx = channel - 1;
+        switch (midiControllerNumber) {
+        case Vst::kPitchBend:
+            id = kPidMPEPitchBendCh1 + chIdx;
+            return kResultTrue;
+        case Vst::kAfterTouch:
+            id = kPidMPEAftertouchCh1 + chIdx;
+            return kResultTrue;
+        default:
+            if (midiControllerNumber == 74) {
+                id = kPidMPECC74Ch1 + chIdx;
+                return kResultTrue;
+            }
+            break;
+        }
     }
 
     id = midiMapping_[midiControllerNumber];

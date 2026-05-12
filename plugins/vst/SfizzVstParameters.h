@@ -37,6 +37,22 @@ enum {
     kPidLevelLast = kPidLevel0 + 16,
     kPidEditorOpen,
     /* Reserved */
+
+    // Per-member-channel MPE pitch bend / aftertouch / CC74.
+    // Hosts (Ableton Live in particular) deliver per-channel MIDI to VST3
+    // plug-ins through IMidiMapping → parameter changes; if the plug-in
+    // returns the same paramID for every channel, per-note expression
+    // collapses to the master. These per-channel IDs let getMidiController-
+    // Assignment hand each member channel (1..15) its own slot, which
+    // playOrderedParameter then routes to the channel-aware *MPE engine
+    // method.
+    kPidMPEPitchBendCh1,
+    kPidMPEPitchBendCh15 = kPidMPEPitchBendCh1 + 14,
+    kPidMPEAftertouchCh1,
+    kPidMPEAftertouchCh15 = kPidMPEAftertouchCh1 + 14,
+    kPidMPECC74Ch1,
+    kPidMPECC74Ch15 = kPidMPECC74Ch1 + 14,
+
     kNumParameters,
 };
 
@@ -108,6 +124,12 @@ struct SfizzRange {
             if (id >= kPidCC0 && id <= kPidCCLast)
                 return {0.0, 0.0, 1.0};
             else if (id >= kPidLevel0 && id <= kPidLevelLast)
+                return {0.0, 0.0, 1.0};
+            else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15)
+                return {0.0, -1.0, 1.0};
+            else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15)
+                return {0.0, 0.0, 1.0};
+            else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15)
                 return {0.0, 0.0, 1.0};
             throw std::runtime_error("Bad parameter ID");
         }
