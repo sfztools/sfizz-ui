@@ -347,16 +347,8 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
     // edits still flow through — they update _state, which differs from the
     // last-pushed snapshot, triggering one targeted push.
     if (_state.mpeEnabled != _lastPushedMpeEnabled) {
-        // On the MPE on→off transition, flush active voices. Voices triggered
-        // while MPE was enabled carry triggerChannel_ > 0 in the engine, and
-        // the channel-less legacy note-off path used below the toggle lands
-        // on channel 0 — those voices won't match and would hang until
-        // polyphony stealing reclaims them. allSoundOff() resets all voices
-        // cleanly; the off→on direction is harmless and doesn't need a flush
-        // (existing voices have triggerChannel_=0, new ones get the incoming
-        // channel; behaviour just shifts from collapsed to per-channel).
-        if (_lastPushedMpeEnabled && !_state.mpeEnabled)
-            synth.allSoundOff();
+        // The engine flushes voices internally on the on→off transition
+        // (see Synth::setMPEEnabled). Wrapper just forwards the new state.
         synth.setMPEEnabled(_state.mpeEnabled);
         _lastPushedMpeEnabled = _state.mpeEnabled;
     }
@@ -607,14 +599,11 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
     sfz::Sfizz& synth = *_synth;
     const int32 sampleOffset = event.sampleOffset;
 
-    // When the MPE toggle is off, dispatch through the channel-less legacy
-    // API. The engine forwards those to *MPE(channel=0) internally, so all
-    // incoming MIDI collapses into the master-channel slot in MidiState —
-    // byte-for-byte identical to pre-fork sfizz. The on→off transition in
-    // process() above flushes active voices so MPE-era voices (with
-    // triggerChannel_>0) don't get stuck when subsequent note-offs arrive
-    // on channel 0 via the legacy path.
-    const bool mpe = _state.mpeEnabled;
+    // Dispatch unconditionally through the *MPE entry points — the engine
+    // normalizes channel to 0 internally when MPE is disabled, so this path
+    // is byte-for-byte equivalent to the legacy non-MPE API in that case.
+    // Single source of truth for "MPE off means single channel" lives in
+    // sfz::Synth, not the wrapper.
     switch (event.type) {
     case Vst::Event::kNoteOnEvent: {
         int pitch = event.noteOn.pitch;
@@ -622,25 +611,13 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             break;
         const int channel = event.noteOn.channel;
         if (event.noteOn.velocity <= 0.0f) {
-            if (mpe)
-                synth.noteOffMPE(sampleOffset, channel, pitch, 0);
-            else
-                synth.noteOff(sampleOffset, pitch, 0);
+            synth.noteOffMPE(sampleOffset, channel, pitch, 0);
             _noteEventsCurrentCycle[pitch] = 0.0f;
             clearActiveNote(event.noteOn.noteId);
         }
         else {
-            if (mpe) {
-                synth.hdNoteOnMPE(sampleOffset, channel, pitch, event.noteOn.velocity);
-                registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
-            }
-            else {
-                synth.hdNoteOn(sampleOffset, pitch, event.noteOn.velocity);
-                // Still register so NoteExpression correlation by noteId works
-                // if a host happens to send NoteExpression with MPE off; the
-                // dispatch below will refuse to act on it.
-                registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
-            }
+            synth.hdNoteOnMPE(sampleOffset, channel, pitch, event.noteOn.velocity);
+            registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
             _noteEventsCurrentCycle[pitch] = event.noteOn.velocity;
         }
         break;
@@ -649,10 +626,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.noteOff.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        if (mpe)
-            synth.hdNoteOffMPE(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
-        else
-            synth.hdNoteOff(sampleOffset, pitch, event.noteOff.velocity);
+        synth.hdNoteOffMPE(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
         _noteEventsCurrentCycle[pitch] = 0.0f;
         clearActiveNote(event.noteOff.noteId);
         break;
@@ -661,10 +635,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.polyPressure.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        if (mpe)
-            synth.hdPolyAftertouchMPE(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
-        else
-            synth.hdPolyAftertouch(sampleOffset, pitch, static_cast<int>(event.polyPressure.pressure * 127.0f + 0.5f));
+        synth.hdPolyAftertouchMPE(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
         break;
     }
     case Vst::Event::kNoteExpressionValueEvent: {
@@ -672,7 +643,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         // master channel would defeat its purpose. With MPE off, the wrapper
         // refuses to act on NoteExpression — pre-fork sfizz didn't react to
         // these either, so this preserves legacy behaviour exactly.
-        if (!mpe)
+        if (!_state.mpeEnabled)
             break;
         const auto& nev = event.noteExpressionValue;
         const int channel = lookupChannelForNoteId(nev.noteId);
@@ -715,40 +686,25 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         break;
     }
     case Vst::Event::kLegacyMIDICCOutEvent: {
-        // Raw MIDI channel-voice messages forwarded by MPE-aware hosts.
-        // For MPE, channel pressure (kAfterTouch) and pitch bend (kPitchBend)
-        // arrive here with the originating MIDI channel set; the global
-        // kPidAftertouch / kPidPitchBend parameter paths can't carry a
-        // channel and are bypassed while MPE is enabled (see playOrderedParameter).
+        // Raw MIDI channel-voice messages forwarded by MPE-aware hosts. The
+        // engine normalizes channel to 0 when MPE is disabled, so these
+        // calls behave like the legacy non-MPE API in that mode.
         const auto& midi = event.midiCCOut;
         const int channel = midi.channel;
         const uint8 cn = midi.controlNumber;
         if (cn == Vst::kAfterTouch) {
-            if (mpe)
-                synth.channelAftertouchMPE(sampleOffset, channel, static_cast<uint8>(midi.value));
-            else
-                synth.channelAftertouch(sampleOffset, static_cast<uint8>(midi.value));
+            synth.channelAftertouchMPE(sampleOffset, channel, static_cast<uint8>(midi.value));
         }
         else if (cn == Vst::kPitchBend) {
             const int raw = (int(static_cast<uint8>(midi.value2)) << 7) | int(static_cast<uint8>(midi.value));
-            if (mpe)
-                synth.pitchWheelMPE(sampleOffset, channel, raw - 8192);
-            else
-                synth.pitchWheel(sampleOffset, raw - 8192);
+            synth.pitchWheelMPE(sampleOffset, channel, raw - 8192);
         }
         else if (cn == Vst::kCtrlPolyPressure) {
-            if (mpe)
-                synth.polyAftertouchMPE(sampleOffset, channel,
-                    static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
-            else
-                synth.polyAftertouch(sampleOffset,
-                    static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
+            synth.polyAftertouchMPE(sampleOffset, channel,
+                static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
         }
         else if (cn < 128) {
-            if (mpe)
-                synth.ccMPE(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
-            else
-                synth.cc(sampleOffset, cn, static_cast<uint8>(midi.value));
+            synth.ccMPE(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
         }
         break;
     }
