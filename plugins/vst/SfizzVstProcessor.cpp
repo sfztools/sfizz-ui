@@ -639,12 +639,14 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         break;
     }
     case Vst::Event::kNoteExpressionValueEvent: {
-        // VST3 NoteExpression is inherently per-note; routing it to a single
-        // master channel would defeat its purpose. With MPE off, the wrapper
-        // refuses to act on NoteExpression — pre-fork sfizz didn't react to
-        // these either, so this preserves legacy behaviour exactly.
-        if (!_state.mpeEnabled)
-            break;
+        // Dispatch unconditionally — the engine collapses channel to 0 when
+        // MPE is off (see Synth::hdPitchWheel et al.), matching the legacy
+        // MIDI path's contract. Per-note bend on a member channel from an
+        // MPE-aware host therefore folds into a single channel-0 bend that
+        // moves the whole chord, just as a raw-MIDI bend on that channel
+        // would have. The wrapper's perNoteRange scaling still applies, so
+        // the audible magnitude depends on the SFZ's bend_up / bend_down
+        // range relative to mpePerNotePitchBendRange.
         const auto& nev = event.noteExpressionValue;
         const int channel = lookupChannelForNoteId(nev.noteId);
         if (channel < 0)
