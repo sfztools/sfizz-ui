@@ -562,28 +562,20 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
             _state.controllers[ccNumber] = value;
         }
         else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15) {
-            // Per-member-channel paramIDs are MPE-only — when the toggle is
-            // off, the wrapper collapses everything to one global channel
-            // (matches the pre-fork engine's single-channel behaviour). The
-            // global kPidPitchBend / kPidAftertouch paths above carry the
-            // master-channel state in that mode.
-            if (!_state.mpeEnabled)
-                break;
             // SfizzRange denormalizes [0, 1] host-normalized to [-1, +1]
             // plain, which is sfizz's normalized bend (mapped to
-            // ±mpePerNotePitchBendRange semitones).
+            // ±mpePerNotePitchBendRange semitones). Dispatch unconditionally —
+            // engine collapses channel to 0 when MPE is off (see
+            // Synth::hdPitchWheel), matching the legacy single-channel
+            // contract.
             const int channel = static_cast<int>(id - kPidMPEPitchBendCh1) + 1;
             synth.hdPitchWheel(sampleOffset, channel, range.denormalize(value));
         }
         else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15) {
-            if (!_state.mpeEnabled)
-                break;
             const int channel = static_cast<int>(id - kPidMPEAftertouchCh1) + 1;
             synth.hdChannelAftertouch(sampleOffset, channel, value);
         }
         else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15) {
-            if (!_state.mpeEnabled)
-                break;
             const int channel = static_cast<int>(id - kPidMPECC74Ch1) + 1;
             synth.hdcc(sampleOffset, channel, 74, value);
         }
