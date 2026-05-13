@@ -573,19 +573,19 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
             // plain, which is sfizz's normalized bend (mapped to
             // ±mpePerNotePitchBendRange semitones).
             const int channel = static_cast<int>(id - kPidMPEPitchBendCh1) + 1;
-            synth.hdPitchWheelMPE(sampleOffset, channel, range.denormalize(value));
+            synth.hdPitchWheel(sampleOffset, channel, range.denormalize(value));
         }
         else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15) {
             if (!_state.mpeEnabled)
                 break;
             const int channel = static_cast<int>(id - kPidMPEAftertouchCh1) + 1;
-            synth.hdChannelAftertouchMPE(sampleOffset, channel, value);
+            synth.hdChannelAftertouch(sampleOffset, channel, value);
         }
         else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15) {
             if (!_state.mpeEnabled)
                 break;
             const int channel = static_cast<int>(id - kPidMPECC74Ch1) + 1;
-            synth.hdccMPE(sampleOffset, channel, 74, value);
+            synth.hdcc(sampleOffset, channel, 74, value);
         }
         break;
     }
@@ -611,12 +611,12 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             break;
         const int channel = event.noteOn.channel;
         if (event.noteOn.velocity <= 0.0f) {
-            synth.noteOffMPE(sampleOffset, channel, pitch, 0);
+            synth.noteOff(sampleOffset, channel, pitch, 0);
             _noteEventsCurrentCycle[pitch] = 0.0f;
             clearActiveNote(event.noteOn.noteId);
         }
         else {
-            synth.hdNoteOnMPE(sampleOffset, channel, pitch, event.noteOn.velocity);
+            synth.hdNoteOn(sampleOffset, channel, pitch, event.noteOn.velocity);
             registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
             _noteEventsCurrentCycle[pitch] = event.noteOn.velocity;
         }
@@ -626,7 +626,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.noteOff.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdNoteOffMPE(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
+        synth.hdNoteOff(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
         _noteEventsCurrentCycle[pitch] = 0.0f;
         clearActiveNote(event.noteOff.noteId);
         break;
@@ -635,7 +635,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         int pitch = event.polyPressure.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdPolyAftertouchMPE(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
+        synth.hdPolyAftertouch(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
         break;
     }
     case Vst::Event::kNoteExpressionValueEvent: {
@@ -661,7 +661,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             float ratio = semitones / perNoteRange;
             if (ratio > 1.0f) ratio = 1.0f;
             else if (ratio < -1.0f) ratio = -1.0f;
-            synth.hdPitchWheelMPE(sampleOffset, channel, ratio);
+            synth.hdPitchWheel(sampleOffset, channel, ratio);
             break;
         }
         case Vst::kVolumeTypeID: {
@@ -669,7 +669,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             float v = static_cast<float>(nev.value);
             if (v < 0.0f) v = 0.0f;
             else if (v > 1.0f) v = 1.0f;
-            synth.hdChannelAftertouchMPE(sampleOffset, channel, v);
+            synth.hdChannelAftertouch(sampleOffset, channel, v);
             break;
         }
         case Vst::kBrightnessTypeID: {
@@ -677,7 +677,7 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
             float v = static_cast<float>(nev.value);
             if (v < 0.0f) v = 0.0f;
             else if (v > 1.0f) v = 1.0f;
-            synth.hdccMPE(sampleOffset, channel, 74, v);
+            synth.hdcc(sampleOffset, channel, 74, v);
             break;
         }
         default:
@@ -693,18 +693,18 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
         const int channel = midi.channel;
         const uint8 cn = midi.controlNumber;
         if (cn == Vst::kAfterTouch) {
-            synth.channelAftertouchMPE(sampleOffset, channel, static_cast<uint8>(midi.value));
+            synth.channelAftertouch(sampleOffset, channel, static_cast<uint8>(midi.value));
         }
         else if (cn == Vst::kPitchBend) {
             const int raw = (int(static_cast<uint8>(midi.value2)) << 7) | int(static_cast<uint8>(midi.value));
-            synth.pitchWheelMPE(sampleOffset, channel, raw - 8192);
+            synth.pitchWheel(sampleOffset, channel, raw - 8192);
         }
         else if (cn == Vst::kCtrlPolyPressure) {
-            synth.polyAftertouchMPE(sampleOffset, channel,
+            synth.polyAftertouch(sampleOffset, channel,
                 static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
         }
         else if (cn < 128) {
-            synth.ccMPE(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
+            synth.cc(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
         }
         break;
     }

@@ -894,14 +894,14 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
         if (msg[2] == 0)
             goto noteoff; // 0 velocity note-ons should be forbidden but just in case...
 
-        sfizz_send_note_on_mpe(self->synth,
+        sfizz_send_note_on_channel(self->synth,
                                (int)ev->time.frames,
                                channel,
                                (int)msg[1],
                                msg[2]);
         break;
     case LV2_MIDI_MSG_NOTE_OFF: noteoff:
-        sfizz_send_note_off_mpe(self->synth,
+        sfizz_send_note_off_channel(self->synth,
                                 (int)ev->time.frames,
                                 channel,
                                 (int)msg[1],
@@ -919,7 +919,7 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
             {
             default:
                 {
-                    sfizz_send_hdcc_mpe(self->synth,
+                    sfizz_send_hdcc_channel(self->synth,
                                         (int)ev->time.frames,
                                         channel,
                                         (int)cc,
@@ -939,20 +939,20 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
         }
         break;
     case LV2_MIDI_MSG_CHANNEL_PRESSURE:
-        sfizz_send_channel_aftertouch_mpe(self->synth,
+        sfizz_send_channel_aftertouch_channel(self->synth,
                       (int)ev->time.frames,
                       channel,
                       msg[1]);
         break;
     case LV2_MIDI_MSG_NOTE_PRESSURE:
-        sfizz_send_poly_aftertouch_mpe(self->synth,
+        sfizz_send_poly_aftertouch_channel(self->synth,
                       (int)ev->time.frames,
                       channel,
                       (int)msg[1],
                       msg[2]);
         break;
     case LV2_MIDI_MSG_BENDER:
-        sfizz_send_pitch_wheel_mpe(self->synth,
+        sfizz_send_pitch_wheel_channel(self->synth,
                         (int)ev->time.frames,
                         channel,
                         PITCH_BUILD_AND_CENTER(msg[1], msg[2]));
