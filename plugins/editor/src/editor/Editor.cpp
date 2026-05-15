@@ -1301,6 +1301,16 @@ void Editor::Impl::createFrameContents()
             return true;
         });
 
+    // MPE bend-range presets. Covers the MPE 1.0 defaults (Master 2,
+    // Member 48) and the common deviations: ±1 / ±7 (Osmose / a few
+    // controllers) / ±12 (octave) / ±24 (two octaves) / ±36 (Roli
+    // legacy) / ±48 / ±60 / ±72 / ±96. EditRange caps both at 96.
+    static const int kPitchBendRangeValues[] = { 1, 2, 7, 12, 24, 36, 48, 60, 72, 96 };
+    for (int value : kPitchBendRangeValues)
+        mpeMasterPitchBendRangeSlider_->addEntry(std::to_string(value), value);
+    for (int value : kPitchBendRangeValues)
+        mpePerNotePitchBendRangeSlider_->addEntry(std::to_string(value), value);
+
     for (int log2value = 10; log2value <= 16; ++log2value) {
         int value = 1 << log2value;
         char text[256];
