@@ -392,7 +392,7 @@ widget_class mainView {open
       }
       Fl_Spinner mpeMasterPitchBendRangeSlider_ {
         comment {tag=kTagSetMPEMasterPitchBendRange}
-        xywh {180 285 80 25}
+        xywh {180 285 70 25}
         class ValueMenu
       }
       Fl_Box {} {
@@ -412,7 +412,7 @@ widget_class mainView {open
       }
       Fl_Spinner mpePerNotePitchBendRangeSlider_ {
         comment {tag=kTagSetMPEPerNotePitchBendRange}
-        xywh {180 345 80 25}
+        xywh {180 345 70 25}
         class ValueMenu
       }
       Fl_Box {} {

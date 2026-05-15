@@ -542,6 +542,15 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
                 checkbox->setValue(value);
                 checkbox->invalid();
             }
+            // Bend-range menu is only user-editable when the matching
+            // "Ignore RPN" toggle is on: otherwise the engine is the
+            // source of truth (driven by incoming RPN 0) and the menu
+            // value is just a read-out of current state.
+            if (SValueMenu* slider = mpeMasterPitchBendRangeSlider_) {
+                slider->setMouseEnabled(value);
+                slider->setAlphaValue(value ? 1.0f : 0.5f);
+                slider->invalid();
+            }
         }
         break;
     case EditId::MPEPerNoteBendIgnoreRpn:
@@ -550,6 +559,11 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
             if (CControl* checkbox = mpePerNoteBendIgnoreRpnCheckbox_) {
                 checkbox->setValue(value);
                 checkbox->invalid();
+            }
+            if (SValueMenu* slider = mpePerNotePitchBendRangeSlider_) {
+                slider->setMouseEnabled(value);
+                slider->setAlphaValue(value ? 1.0f : 0.5f);
+                slider->invalid();
             }
         }
         break;
@@ -1310,6 +1324,16 @@ void Editor::Impl::createFrameContents()
         mpeMasterPitchBendRangeSlider_->addEntry(std::to_string(value), value);
     for (int value : kPitchBendRangeValues)
         mpePerNotePitchBendRangeSlider_->addEntry(std::to_string(value), value);
+
+    // Bend ranges are whole semitones — render the display as an integer
+    // rather than the float-default "2.00" / "48.00".
+    auto bendRangeIntFormatter = [](float value, std::string& result, CParamDisplay*) -> bool
+    {
+        result = std::to_string(static_cast<int>(std::round(value)));
+        return true;
+    };
+    mpeMasterPitchBendRangeSlider_->setValueToStringFunction2(bendRangeIntFormatter);
+    mpePerNotePitchBendRangeSlider_->setValueToStringFunction2(bendRangeIntFormatter);
 
     for (int log2value = 10; log2value <= 16; ++log2value) {
         int value = 1 << log2value;
