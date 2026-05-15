@@ -352,11 +352,24 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
         synth.setMPEEnabled(_state.mpeEnabled);
         _lastPushedMpeEnabled = _state.mpeEnabled;
     }
-    if (_state.mpeMasterPitchBendRange != _lastPushedMpeMasterPitchBendRange
-        || _state.mpePerNotePitchBendRange != _lastPushedMpePerNotePitchBendRange) {
-        synth.setMPEPitchBendRange(_state.mpeMasterPitchBendRange, _state.mpePerNotePitchBendRange);
-        _lastPushedMpeMasterPitchBendRange = _state.mpeMasterPitchBendRange;
-        _lastPushedMpePerNotePitchBendRange = _state.mpePerNotePitchBendRange;
+    // Per-axis target bend range: in override mode (ignore=true) the
+    // engine's effective range is the user's saved override; in
+    // RPN-driven mode (ignore=false) it's the last-received RPN 0 value
+    // for that axis, falling back to the MPE 1.0 default (2 master,
+    // 48 per-note) when no RPN has been seen yet. The wrapper is the
+    // single source of truth so on-screen state, persisted state, and
+    // engine state all line up across the override toggle edges.
+    const float targetMasterBend = _state.mpeMasterBendIgnoreRpn
+        ? _state.mpeMasterPitchBendRange
+        : _lastReceivedMasterRpn.value_or(2.0f);
+    const float targetPerNoteBend = _state.mpePerNoteBendIgnoreRpn
+        ? _state.mpePerNotePitchBendRange
+        : _lastReceivedPerNoteRpn.value_or(48.0f);
+    if (targetMasterBend != _lastPushedMpeMasterPitchBendRange
+        || targetPerNoteBend != _lastPushedMpePerNotePitchBendRange) {
+        synth.setMPEPitchBendRange(targetMasterBend, targetPerNoteBend);
+        _lastPushedMpeMasterPitchBendRange = targetMasterBend;
+        _lastPushedMpePerNotePitchBendRange = targetPerNoteBend;
     }
     // Opt-out flags are wrapper-write-only — engine never modifies them — so a
     // per-block push is harmless and avoids the bookkeeping above.
@@ -377,6 +390,8 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
         const bool engineMpeEnabled = synth.getMPEEnabled();
         const float engineMasterRange = synth.getMPEMasterPitchBendRange();
         const float enginePerNoteRange = synth.getMPEPerNotePitchBendRange();
+        const float masterLastRpn = _lastReceivedMasterRpn.value_or(-1.0f);
+        const float perNoteLastRpn = _lastReceivedPerNoteRpn.value_or(-1.0f);
         Vst::IParameterChanges* outChanges = data.outputParameterChanges;
         auto reportParam = [outChanges](Vst::ParamID pid, float plainValue) {
             if (!outChanges)
@@ -392,15 +407,26 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
             _lastPushedMpeEnabled = engineMpeEnabled;
             reportParam(kPidMPEEnabled, engineMpeEnabled ? 1.0f : 0.0f);
         }
-        if (engineMasterRange != _state.mpeMasterPitchBendRange) {
-            _state.mpeMasterPitchBendRange = engineMasterRange;
-            _lastPushedMpeMasterPitchBendRange = engineMasterRange;
-            reportParam(kPidMPEMasterPitchBendRange, engineMasterRange);
+        // Engine effective bend ranges are read-only UI mirrors. Emit when
+        // they change; do NOT write back into _state.mpe*PitchBendRange —
+        // those fields are the user's saved override, not the engine's
+        // currently effective value. The editor uses the effective values
+        // for its "Current X bend value" read-out beside each override row.
+        if (engineMasterRange != _lastReportedEffectiveMasterBend) {
+            _lastReportedEffectiveMasterBend = engineMasterRange;
+            reportParam(kPidMPEMasterEffectiveBendRange, engineMasterRange);
         }
-        if (enginePerNoteRange != _state.mpePerNotePitchBendRange) {
-            _state.mpePerNotePitchBendRange = enginePerNoteRange;
-            _lastPushedMpePerNotePitchBendRange = enginePerNoteRange;
-            reportParam(kPidMPEPerNotePitchBendRange, enginePerNoteRange);
+        if (enginePerNoteRange != _lastReportedEffectivePerNoteBend) {
+            _lastReportedEffectivePerNoteBend = enginePerNoteRange;
+            reportParam(kPidMPEPerNoteEffectiveBendRange, enginePerNoteRange);
+        }
+        if (masterLastRpn != _lastReportedMasterLastRpn) {
+            _lastReportedMasterLastRpn = masterLastRpn;
+            reportParam(kPidMPEMasterBendLastRpn, masterLastRpn);
+        }
+        if (perNoteLastRpn != _lastReportedPerNoteLastRpn) {
+            _lastReportedPerNoteLastRpn = perNoteLastRpn;
+            reportParam(kPidMPEPerNoteBendLastRpn, perNoteLastRpn);
         }
     }
 
@@ -698,10 +724,47 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
                 static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
         }
         else if (cn < 128) {
+            // Peek for RPN 0 (Pitch Bend Sensitivity) before forwarding.
+            // Engine has its own parser; this wrapper-side one tracks
+            // the last-received value per axis so the UI can render
+            // case-3 (RPN received while override is on, value shown
+            // struck through). Always-on — independent of any toggle.
+            parseAndTrackRpn(channel, cn, static_cast<uint8>(midi.value));
             synth.cc(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
         }
         break;
     }
+    default:
+        break;
+    }
+}
+
+void SfizzVstProcessor::parseAndTrackRpn(int channel, uint8_t cc, uint8_t value) noexcept
+{
+    if (channel < 0 || channel >= 16)
+        return;
+    RpnParserState& s = _rpnState[static_cast<size_t>(channel)];
+    switch (cc) {
+    case 101: // RPN MSB
+        s.selectedMsb = value;
+        break;
+    case 100: // RPN LSB
+        s.selectedLsb = value;
+        break;
+    case 6:   // Data Entry MSB
+        // RPN 0/0 = Pitch Bend Sensitivity. Master channel 0 sets the
+        // master range; any member channel (1-15) sets the per-note
+        // range. Match the engine's split (Synth.cpp::handleControlChange
+        // dispatch on channel == 0 vs != 0). Commercial controllers send
+        // identical values on every member channel, so last-wins is fine.
+        if (s.selectedMsb == 0 && s.selectedLsb == 0) {
+            const float semitones = static_cast<float>(value);
+            if (channel == 0)
+                _lastReceivedMasterRpn = semitones;
+            else
+                _lastReceivedPerNoteRpn = semitones;
+        }
+        break;
     default:
         break;
     }

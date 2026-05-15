@@ -46,6 +46,17 @@ EditRange EditRange::get(EditId id)
         return { 0, 0, 1 };
     case EditId::MPEPerNoteBendIgnoreRpn:
         return { 0, 0, 1 };
+    case EditId::MPEMasterEffectiveBendRange:
+        return { 2, 0, 96 };
+    case EditId::MPEPerNoteEffectiveBendRange:
+        return { 48, 0, 96 };
+    case EditId::MPEMasterBendLastRpn:
+        // -1 sentinel = no RPN 0 received yet for this axis. 0..96
+        // covers every valid received value (MPE 1.0 caps bend range
+        // at ±96 semitones / 8 octaves).
+        return { -1, -1, 96 };
+    case EditId::MPEPerNoteBendLastRpn:
+        return { -1, -1, 96 };
     case EditId::UIActivePanel:
         return { 0, 0, 255 };
     case EditId::UIZoom:

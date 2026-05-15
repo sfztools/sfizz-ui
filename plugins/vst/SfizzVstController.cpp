@@ -195,6 +195,27 @@ tresult PLUGIN_API SfizzVstControllerNoUi::initialize(FUnknown* context)
         SfizzRange::getForParameter(kPidMPEPerNoteBendIgnoreRpn).createParameter(
             Steinberg::String("Ignore MPE per-note bend RPN"), kPidMPEPerNoteBendIgnoreRpn,
             nullptr, 1, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+
+    // Read-only mirrors of the engine's effective bend ranges + "RPN
+    // received" flags. Driven from the processor via reportParam; not
+    // host-automatable (kNoFlags). Used by the editor's "Current X bend
+    // value" read-out fields.
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEMasterEffectiveBendRange).createParameter(
+            Steinberg::String("MPE master effective bend range"), kPidMPEMasterEffectiveBendRange,
+            Steinberg::String("st"), 0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEPerNoteEffectiveBendRange).createParameter(
+            Steinberg::String("MPE per-note effective bend range"), kPidMPEPerNoteEffectiveBendRange,
+            Steinberg::String("st"), 0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEMasterBendLastRpn).createParameter(
+            Steinberg::String("MPE master bend last RPN"), kPidMPEMasterBendLastRpn,
+            Steinberg::String("st"), 0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
+    parameters.addParameter(
+        SfizzRange::getForParameter(kPidMPEPerNoteBendLastRpn).createParameter(
+            Steinberg::String("MPE per-note bend last RPN"), kPidMPEPerNoteBendLastRpn,
+            Steinberg::String("st"), 0, Vst::ParameterInfo::kNoFlags, Vst::kRootUnitId));
     (void)pid;
 
     // Initial MIDI mapping for the master / fallback channel. Per-channel

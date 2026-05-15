@@ -371,6 +371,18 @@ void SfizzVstEditor::updateParameter(Vst::Parameter* parameterToUpdate)
         case kPidMPEPerNoteBendIgnoreRpn:
             uiReceiveValue(EditId::MPEPerNoteBendIgnoreRpn, range.denormalize(value));
             break;
+        case kPidMPEMasterEffectiveBendRange:
+            uiReceiveValue(EditId::MPEMasterEffectiveBendRange, range.denormalize(value));
+            break;
+        case kPidMPEPerNoteEffectiveBendRange:
+            uiReceiveValue(EditId::MPEPerNoteEffectiveBendRange, range.denormalize(value));
+            break;
+        case kPidMPEMasterBendLastRpn:
+            uiReceiveValue(EditId::MPEMasterBendLastRpn, range.denormalize(value));
+            break;
+        case kPidMPEPerNoteBendLastRpn:
+            uiReceiveValue(EditId::MPEPerNoteBendLastRpn, range.denormalize(value));
+            break;
         case kPidNumOutputs:
             uiReceiveValue(EditId::PluginOutputs, (int32)range.denormalize(value));
             break;

@@ -53,13 +53,24 @@ enum {
     kPidMPECC74Ch1,
     kPidMPECC74Ch15 = kPidMPECC74Ch1 + 14,
 
-    // SMPL-46 MPE auto-config opt-outs. The engine parses RPN 6 (MCM)
+    // MPE auto-config opt-outs. The engine parses RPN 6 (MCM)
     // and RPN 0 (Pitch Bend Sensitivity) per MPE 1.0; these two flags
     // let the user veto the bend-range updates without affecting the
     // MCM enable path. Placed at the end of the parameter block so the
     // pre-existing kPid values don't shift.
     kPidMPEMasterBendIgnoreRpn,
     kPidMPEPerNoteBendIgnoreRpn,
+
+    // Read-only mirrors of the engine's effective bend ranges (after
+    // RPN / override resolution) and "has any RPN been received?" flags.
+    // Used by the editor's "Current X bend value" read-out beside each
+    // override row, including the case-3 strikethrough display when an
+    // RPN is being ignored. Not host-automatable; the wrapper drives
+    // them via reportParam from process().
+    kPidMPEMasterEffectiveBendRange,
+    kPidMPEPerNoteEffectiveBendRange,
+    kPidMPEMasterBendLastRpn,
+    kPidMPEPerNoteBendLastRpn,
 
     kNumParameters,
 };
@@ -124,6 +135,16 @@ struct SfizzRange {
             return {0.0, 0.0, 1.0};
         case kPidMPEPerNoteBendIgnoreRpn:
             return {0.0, 0.0, 1.0};
+        case kPidMPEMasterEffectiveBendRange:
+            return {2.0, 0.0, 96.0};
+        case kPidMPEPerNoteEffectiveBendRange:
+            return {48.0, 0.0, 96.0};
+        case kPidMPEMasterBendLastRpn:
+            // -1 sentinel = no RPN received yet on this axis; 0..96
+            // covers every valid received value.
+            return {-1.0, -1.0, 96.0};
+        case kPidMPEPerNoteBendLastRpn:
+            return {-1.0, -1.0, 96.0};
         case kPidAftertouch:
             return {0.0, 0.0, 1.0};
         case kPidPitchBend:

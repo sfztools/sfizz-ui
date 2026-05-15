@@ -152,6 +152,22 @@ struct Editor::Impl : EditorController::Receiver,
     SValueMenu *mpePerNotePitchBendRangeSlider_ = nullptr;
     CCheckBox *mpeMasterBendIgnoreRpnCheckbox_ = nullptr;
     CCheckBox *mpePerNoteBendIgnoreRpnCheckbox_ = nullptr;
+    SStrikethroughLabel* mpeMasterEffectiveBendDisplay_ = nullptr;
+    SStrikethroughLabel* mpePerNoteEffectiveBendDisplay_ = nullptr;
+
+    // Editor-side state used to recompute the "Current X bend value"
+    // read-out. Effective bend ranges and last-received RPN come from
+    // the engine via EditIds; the ignore flags come from the user's
+    // checkboxes. -1 in lastRpn = no RPN received yet (sentinel matches
+    // the wrapper-side encoding in SfizzVstProcessor).
+    float mpeMasterEffectiveBend_ { 2.0f };
+    float mpePerNoteEffectiveBend_ { 48.0f };
+    float mpeMasterLastRpn_ { -1.0f };
+    float mpePerNoteLastRpn_ { -1.0f };
+    bool mpeMasterIgnoreRpn_ { false };
+    bool mpePerNoteIgnoreRpn_ { false };
+    void updateMpeMasterBendDisplay();
+    void updateMpePerNoteBendDisplay();
     CTextLabel* keyswitchLabel_ = nullptr;
     CTextLabel* keyswitchInactiveLabel_ = nullptr;
     CTextLabel* keyswitchBadge_ = nullptr;
@@ -384,6 +400,50 @@ SLevelMeter* Editor::Impl::createVMeter(const CRect& bounds, int, const char*, C
     return meter;
 };
 
+namespace {
+    // Render an integer semitone count for the bend-range read-out.
+    // Empty string when value < 0 (sentinel for "not received").
+    void setBendDisplayValue(SStrikethroughLabel* label, float value, bool strikethrough)
+    {
+        if (!label)
+            return;
+        if (value < 0) {
+            label->setText("");
+        }
+        else {
+            char buf[16];
+            std::snprintf(buf, sizeof(buf), "%d", static_cast<int>(std::round(value)));
+            label->setText(buf);
+        }
+        label->setStrikethrough(strikethrough);
+        label->invalid();
+    }
+}
+
+void Editor::Impl::updateMpeMasterBendDisplay()
+{
+    // Cases:
+    //   override on  + RPN received -> show last RPN, struck through
+    //   anything else                -> show engine's effective range
+    // Display is always an integer semitone count (last RPN is always
+    // an integer 0..96 from the wrapper-side parser; effective range
+    // is rounded for display).
+    const bool rpnReceived = (mpeMasterLastRpn_ >= 0.0f);
+    if (mpeMasterIgnoreRpn_ && rpnReceived)
+        setBendDisplayValue(mpeMasterEffectiveBendDisplay_, mpeMasterLastRpn_, true);
+    else
+        setBendDisplayValue(mpeMasterEffectiveBendDisplay_, mpeMasterEffectiveBend_, false);
+}
+
+void Editor::Impl::updateMpePerNoteBendDisplay()
+{
+    const bool rpnReceived = (mpePerNoteLastRpn_ >= 0.0f);
+    if (mpePerNoteIgnoreRpn_ && rpnReceived)
+        setBendDisplayValue(mpePerNoteEffectiveBendDisplay_, mpePerNoteLastRpn_, true);
+    else
+        setBendDisplayValue(mpePerNoteEffectiveBendDisplay_, mpePerNoteEffectiveBend_, false);
+}
+
 void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
 {
     switch (id) {
@@ -538,6 +598,7 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
     case EditId::MPEMasterBendIgnoreRpn:
         {
             const bool value = v.to_float();
+            mpeMasterIgnoreRpn_ = value;
             if (CControl* checkbox = mpeMasterBendIgnoreRpnCheckbox_) {
                 checkbox->setValue(value);
                 checkbox->invalid();
@@ -551,11 +612,13 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
                 slider->setAlphaValue(value ? 1.0f : 0.5f);
                 slider->invalid();
             }
+            updateMpeMasterBendDisplay();
         }
         break;
     case EditId::MPEPerNoteBendIgnoreRpn:
         {
             const bool value = v.to_float();
+            mpePerNoteIgnoreRpn_ = value;
             if (CControl* checkbox = mpePerNoteBendIgnoreRpnCheckbox_) {
                 checkbox->setValue(value);
                 checkbox->invalid();
@@ -565,7 +628,24 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
                 slider->setAlphaValue(value ? 1.0f : 0.5f);
                 slider->invalid();
             }
+            updateMpePerNoteBendDisplay();
         }
+        break;
+    case EditId::MPEMasterEffectiveBendRange:
+        mpeMasterEffectiveBend_ = v.to_float();
+        updateMpeMasterBendDisplay();
+        break;
+    case EditId::MPEPerNoteEffectiveBendRange:
+        mpePerNoteEffectiveBend_ = v.to_float();
+        updateMpePerNoteBendDisplay();
+        break;
+    case EditId::MPEMasterBendLastRpn:
+        mpeMasterLastRpn_ = v.to_float();
+        updateMpeMasterBendDisplay();
+        break;
+    case EditId::MPEPerNoteBendLastRpn:
+        mpePerNoteLastRpn_ = v.to_float();
+        updateMpePerNoteBendDisplay();
         break;
     case EditId::CanEditUserFilesDir:
         {
@@ -1177,6 +1257,19 @@ void Editor::Impl::createFrameContents()
         auto createCheckbox = [this](const CRect& bounds, int tag, const char* label, CHoriTxtAlign, int) {
             auto* checkbox = new CCheckBox(bounds, this, tag, label);
             return checkbox;
+        };
+
+        auto createStrikethroughLabel = [this, &palette](const CRect& bounds, int, const char* label, CHoriTxtAlign align, int fontsize) {
+            auto* lbl = new SStrikethroughLabel(bounds, label);
+            lbl->setFrameColor(kColorTransparent);
+            lbl->setBackColor(kColorTransparent);
+            OnThemeChanged.push_back([lbl, palette]() {
+                lbl->setFontColor(palette->text);
+            });
+            lbl->setHoriAlign(align);
+            auto font = makeOwned<CFontDesc>("Roboto", fontsize);
+            lbl->setFont(font);
+            return lbl;
         };
 
         auto createTextEdit = [this, &palette] (const CRect& bounds, int tag, const char* label, CHoriTxtAlign align, int fontsize) {
