@@ -12,6 +12,7 @@
 #include "public.sdk/source/common/threadchecker.h"
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstnoteexpression.h"
+#include "pluginterfaces/vst/ivstphysicalui.h"
 #include "vstgui/plugin-bindings/vst3editor.h"
 #include <sfizz_message.h>
 #include <mutex>
@@ -24,6 +25,8 @@ using namespace VSTGUI;
 class SfizzVstControllerNoUi : public Vst::EditControllerEx1,
                                public Vst::IMidiMapping,
                                public Vst::IKeyswitchController,
+                               public Vst::INoteExpressionController,
+                               public Vst::INoteExpressionPhysicalUIMapping,
                                public Vst::IEditControllerHostEditing {
 public:
     virtual ~SfizzVstControllerNoUi() {}
@@ -35,6 +38,13 @@ public:
 
     int32 PLUGIN_API getKeyswitchCount (int32 busIndex, int16 channel) override;
     tresult PLUGIN_API getKeyswitchInfo (int32 busIndex, int16 channel, int32 keySwitchIndex, Vst::KeyswitchInfo& info) override;
+
+    int32 PLUGIN_API getNoteExpressionCount(int32 busIndex, int16 channel) override;
+    tresult PLUGIN_API getNoteExpressionInfo(int32 busIndex, int16 channel, int32 noteExpressionIndex, Vst::NoteExpressionTypeInfo& info) override;
+    tresult PLUGIN_API getNoteExpressionStringByValue(int32 busIndex, int16 channel, Vst::NoteExpressionTypeID id, Vst::NoteExpressionValue valueNormalized, Vst::String128 string) override;
+    tresult PLUGIN_API getNoteExpressionValueByString(int32 busIndex, int16 channel, Vst::NoteExpressionTypeID id, const Vst::TChar* string, Vst::NoteExpressionValue& valueNormalized) override;
+
+    tresult PLUGIN_API getPhysicalUIMapping(int32 busIndex, int16 channel, Vst::PhysicalUIMapList& list) override;
 
     tresult PLUGIN_API beginEditFromHost(Vst::ParamID paramID) override;
     tresult PLUGIN_API endEditFromHost(Vst::ParamID paramID) override;
@@ -51,6 +61,8 @@ public:
     DEFINE_INTERFACES
     DEF_INTERFACE(Vst::IMidiMapping)
     DEF_INTERFACE(Vst::IKeyswitchController)
+    DEF_INTERFACE(Vst::INoteExpressionController)
+    DEF_INTERFACE(Vst::INoteExpressionPhysicalUIMapping)
     DEF_INTERFACE(Vst::IEditControllerHostEditing)
     END_DEFINE_INTERFACES(Vst::EditControllerEx1)
     REFCOUNT_METHODS(Vst::EditControllerEx1)

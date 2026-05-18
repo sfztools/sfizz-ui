@@ -17,6 +17,21 @@ Our [releases] are an immediate way to get a working library and plugins for Win
 Linux builds are available over at [OBS].
 On any operating system, you might prefer to [build from source]!
 
+## MPE
+
+Sfizz supports MIDI Polyphonic Expression (MPE) — per-note pitch bend, pressure and
+slide / Y from controllers like the Expressive E Osmose, Ableton Push 3, the Roli
+Seaboard family and the LinnStrument. Enable it via the **MPE enabled** checkbox
+in sfizz's Settings panel; the **MPE master bend** and **MPE per-note bend** spinners
+underneath set the bend ranges in semitones (MPE 1.0 defaults: 2 st master, 48 st
+per-note).
+
+On **Ableton Live 12** sfizz is not on the host's auto-detect list for MPE-compatible
+plug-ins, so MPE routing has to be enabled per device manually: right-click the device
+header, select **Enable MPE mode**, then (optionally) **MPE/Multi-channel Settings…**
+to configure the zone. Live persists this in the project, so it's a one-time toggle
+per device instance.
+
 ## Contributing to sfizz
 
 There is actually many things anyone can do, programming-related or music-related.

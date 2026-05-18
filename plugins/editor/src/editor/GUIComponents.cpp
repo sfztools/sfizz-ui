@@ -1381,3 +1381,29 @@ void STextEdit::onKeyboardEvent(KeyboardEvent &event)
         event.consumed = true;
     }
 }
+
+///
+void SStrikethroughLabel::setStrikethrough(bool on)
+{
+    if (strikethrough_ == on)
+        return;
+    strikethrough_ = on;
+    invalid();
+}
+
+void SStrikethroughLabel::draw(CDrawContext* context)
+{
+    CTextLabel::draw(context);
+
+    if (!strikethrough_)
+        return;
+
+    const CRect r = getViewSize();
+    const CCoord midY = r.top + r.getHeight() * 0.5;
+    // Inset a few pixels at each end so the strike doesn't overlap the
+    // optional frame; line weight 1.5 reads against Roboto 14 (1 px is
+    // too thin, 2 looks like a separate rule).
+    context->setLineWidth(1.5);
+    context->setFrameColor(getFontColor());
+    context->drawLine(CPoint(r.left + 4, midY), CPoint(r.right - 4, midY));
+}

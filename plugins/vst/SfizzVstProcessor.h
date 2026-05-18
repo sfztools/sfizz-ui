@@ -14,10 +14,12 @@
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include <sfizz.hpp>
 #include <SpinMutex.h>
+#include <absl/types/optional.h>
 #include <array>
 #include <thread>
 #include <memory>
 #include <cstdlib>
+#include <cstdint>
 
 using namespace Steinberg;
 
@@ -65,6 +67,48 @@ private:
     SfizzVstState _state;
     float _currentStretchedTuning = 0;
 
+    // Last wrapper-state values pushed to the synth for the MPE fields the
+    // engine can itself write back to (via RPN 6 / RPN 0 auto-config). The
+    // per-block "push wrapper state → synth" loop in process() is gated on
+    // a diff against these so a host or UI change still propagates while an
+    // engine-side auto-config update isn't overwritten on the next block.
+    // Initial values match the SfizzVstState defaults, which also match the
+    // engine defaults — so on the very first block no spurious push happens
+    // for instances that load with defaults.
+    bool _lastPushedMpeEnabled { false };
+    float _lastPushedMpeMasterPitchBendRange { 2.0f };
+    float _lastPushedMpePerNotePitchBendRange { 48.0f };
+
+    // Wrapper-side RPN 0 (Pitch Bend Sensitivity) tracking. The engine
+    // has its own RPN parser, but when the corresponding "Ignore RPN"
+    // toggle is on the engine drops the incoming value before applying
+    // it to bend-range state. The wrapper still needs to know the last
+    // received value so the UI can render the case-3 "RPN received
+    // while override is on" badge (the incoming value, struck through).
+    // Per-channel parser state because RPN selection is channel-scoped
+    // per the MIDI spec. absl::nullopt means no RPN 0 has been seen on
+    // this axis since plugin instance start.
+    struct RpnParserState {
+        uint8_t selectedMsb { 0xFF };
+        uint8_t selectedLsb { 0xFF };
+    };
+    std::array<RpnParserState, 16> _rpnState {};
+    absl::optional<float> _lastReceivedMasterRpn;
+    absl::optional<float> _lastReceivedPerNoteRpn;
+    void parseAndTrackRpn(int channel, uint8_t cc, uint8_t value) noexcept;
+
+    // Diff state for per-block "emit-on-change" of the engine's
+    // effective bend ranges + last-RPN values. Effective sentinel
+    // -1.0f forces a first-block emit even when engine matches the
+    // default. Last-RPN sentinel -2.0f keeps the "not received" -1.0f
+    // payload distinguishable from the wrapper's start-of-life state,
+    // so an instance that never receives RPN still emits -1 once and
+    // the UI gets a definitive "no RPN" signal.
+    float _lastReportedEffectiveMasterBend { -1.0f };
+    float _lastReportedEffectivePerNoteBend { -1.0f };
+    float _lastReportedMasterLastRpn { -2.0f };
+    float _lastReportedPerNoteLastRpn { -2.0f };
+
     // whether allowed to perform events (owns the processing lock)
     bool _canPerformEventsAndParameters {};
 
@@ -90,6 +134,23 @@ private:
 
     // note event tracking
     std::array<float, 128> _noteEventsCurrentCycle; // 0: off, >0: on, <0: no change
+
+    // noteId -> channel correlation for VST3 NoteExpressionValueEvent dispatch.
+    // VST3 expression events key by noteId only; we need the originating note's
+    // channel to dispatch to the right MPE engine method. Fixed-size table,
+    // linear scan, RT-safe. Slot is free when noteId == kFreeNoteId.
+    // (-1 is a valid host-doesn't-track sentinel and must not collide.)
+    static constexpr int32 kFreeNoteId = -2;
+    static constexpr size_t kMaxActiveNotes = 64;
+    struct ActiveNoteEntry {
+        int32 noteId = kFreeNoteId;
+        int16 channel = 0;
+    };
+    std::array<ActiveNoteEntry, kMaxActiveNotes> _activeNotes {};
+
+    void registerActiveNote(int32 noteId, int16 channel) noexcept;
+    void clearActiveNote(int32 noteId) noexcept;
+    int lookupChannelForNoteId(int32 noteId) const noexcept;
 
     // worker and thread sync
     std::thread _worker;

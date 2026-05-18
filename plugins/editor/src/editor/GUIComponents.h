@@ -534,3 +534,25 @@ protected:
 private:
     CColor color_;
 };
+
+///
+// Read-only text label that can optionally draw a horizontal
+// strikethrough line through the text. Used by the MPE settings
+// "Current X bend value" read-out: when the user has the override
+// toggle on AND an RPN 0 message has arrived for that axis, the
+// read-out shows the incoming RPN value struck through to signal
+// "engine is ignoring this RPN". In all other cases the strikethrough
+// is off and the label renders as plain text.
+class SStrikethroughLabel : public CTextLabel {
+public:
+    using CTextLabel::CTextLabel;
+
+    void setStrikethrough(bool on);
+    bool getStrikethrough() const { return strikethrough_; }
+
+protected:
+    void draw(CDrawContext* context) override;
+
+private:
+    bool strikethrough_ = false;
+};

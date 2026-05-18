@@ -16,9 +16,12 @@
 #include "base/source/fstreamer.h"
 #include "base/source/updatehandler.h"
 #include "pluginterfaces/vst/ivstevents.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include <ghc/fs_std.hpp>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 
 static const char defaultSfzText[] =
@@ -94,7 +97,7 @@ tresult PLUGIN_API SfizzVstProcessor::initialize(FUnknown* context)
     _automationUpdate->addDependent(this);
 
     addAudioOutput(STR16("Audio Output 1"), Vst::SpeakerArr::kStereo);
-    addEventInput(STR16("Event Input"), 1);
+    addEventInput(STR16("Event Input"), 16);
 
     _state = SfizzVstState();
 
@@ -339,8 +342,110 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
     synth.setSampleQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingSampleQuality);
     synth.setOscillatorQuality(sfz::Sfizz::ProcessFreewheeling, _state.freewheelingOscillatorQuality);
     synth.setSustainCancelsRelease(_state.sustainCancelsRelease);
+    // Only push the engine-writable MPE fields when the wrapper state actually
+    // changed since the last push. Otherwise an MCM / RPN 0 sequence that
+    // auto-configures the engine on one block gets clobbered on the very next
+    // block, because the wrapper would re-send its stale state. Host or UI
+    // edits still flow through — they update _state, which differs from the
+    // last-pushed snapshot, triggering one targeted push.
+    if (_state.mpeEnabled != _lastPushedMpeEnabled) {
+        // The engine flushes voices internally on the on→off transition
+        // (see Synth::setMPEEnabled). Wrapper just forwards the new state.
+        synth.setMPEEnabled(_state.mpeEnabled);
+        _lastPushedMpeEnabled = _state.mpeEnabled;
+    }
+    // Per-axis target bend range: in override mode (ignore=true) the
+    // engine's effective range is the user's saved override; in
+    // RPN-driven mode (ignore=false) it's the last-received RPN 0 value
+    // for that axis, falling back to the MPE 1.0 default (2 master,
+    // 48 per-note) when no RPN has been seen yet. The wrapper is the
+    // single source of truth so on-screen state, persisted state, and
+    // engine state all line up across the override toggle edges.
+    const float targetMasterBend = _state.mpeMasterBendIgnoreRpn
+        ? _state.mpeMasterPitchBendRange
+        : _lastReceivedMasterRpn.value_or(2.0f);
+    const float targetPerNoteBend = _state.mpePerNoteBendIgnoreRpn
+        ? _state.mpePerNotePitchBendRange
+        : _lastReceivedPerNoteRpn.value_or(48.0f);
+    if (targetMasterBend != _lastPushedMpeMasterPitchBendRange
+        || targetPerNoteBend != _lastPushedMpePerNotePitchBendRange) {
+        synth.setMPEPitchBendRange(targetMasterBend, targetPerNoteBend);
+        _lastPushedMpeMasterPitchBendRange = targetMasterBend;
+        _lastPushedMpePerNotePitchBendRange = targetPerNoteBend;
+    }
+    // Opt-out flags are wrapper-write-only — engine never modifies them — so a
+    // per-block push is harmless and avoids the bookkeeping above.
+    synth.setMPEMasterBendAutoConfigEnabled(!_state.mpeMasterBendIgnoreRpn);
+    synth.setMPEPerNoteBendAutoConfigEnabled(!_state.mpePerNoteBendIgnoreRpn);
 
     synth.renderBlock(outputs, numFrames, data.numOutputs);
+
+    // Feed back any engine-driven MPE state changes to the host. The engine
+    // can flip mpeEnabled / the bend ranges from incoming MIDI (RPN 6 MCM /
+    // RPN 0 Pitch Bend Sensitivity). Without this round-trip, _state stays
+    // pinned to the pre-MIDI values: the UI would keep showing the old
+    // value, project saves would persist the pre-MCM state, and host
+    // automation lanes would never learn about the change. Updating
+    // _lastPushed* alongside _state keeps the next block's wrapper→engine
+    // dirty check quiet — we've just synced both sides to the engine.
+    {
+        const bool engineMpeEnabled = synth.getMPEEnabled();
+        const float engineMasterRange = synth.getMPEMasterPitchBendRange();
+        const float enginePerNoteRange = synth.getMPEPerNotePitchBendRange();
+        const float masterLastRpn = _lastReceivedMasterRpn.value_or(-1.0f);
+        const float perNoteLastRpn = _lastReceivedPerNoteRpn.value_or(-1.0f);
+        Vst::IParameterChanges* outChanges = data.outputParameterChanges;
+        auto reportParam = [outChanges](Vst::ParamID pid, float plainValue) {
+            if (!outChanges)
+                return;
+            int32 index;
+            if (Vst::IParamValueQueue* vq = outChanges->addParameterData(pid, index)) {
+                const float norm = SfizzRange::getForParameter(pid).normalize(plainValue);
+                vq->addPoint(0, norm, index);
+            }
+        };
+        if (engineMpeEnabled != _state.mpeEnabled) {
+            if (_state.mpeIgnoreMcm) {
+                // User opted out of MCM auto-config (MPE 1.0 Appendix A.1
+                // escape hatch). The engine's RPN parser already flipped
+                // its internal mpeEnabled_; slap it back to the user's
+                // value so the dispatch gate, voice manager, and
+                // outputParameterChanges feedback all stay aligned with
+                // the UI toggle. The re-assert happens before renderBlock
+                // returns audio on this block, so notes that arrive
+                // immediately after the MCM burst route under the
+                // pinned state.
+                synth.setMPEEnabled(_state.mpeEnabled);
+                _lastPushedMpeEnabled = _state.mpeEnabled;
+            }
+            else {
+                _state.mpeEnabled = engineMpeEnabled;
+                _lastPushedMpeEnabled = engineMpeEnabled;
+                reportParam(kPidMPEEnabled, engineMpeEnabled ? 1.0f : 0.0f);
+            }
+        }
+        // Engine effective bend ranges are read-only UI mirrors. Emit when
+        // they change; do NOT write back into _state.mpe*PitchBendRange —
+        // those fields are the user's saved override, not the engine's
+        // currently effective value. The editor uses the effective values
+        // for its "Current X bend value" read-out beside each override row.
+        if (engineMasterRange != _lastReportedEffectiveMasterBend) {
+            _lastReportedEffectiveMasterBend = engineMasterRange;
+            reportParam(kPidMPEMasterEffectiveBendRange, engineMasterRange);
+        }
+        if (enginePerNoteRange != _lastReportedEffectivePerNoteBend) {
+            _lastReportedEffectivePerNoteBend = enginePerNoteRange;
+            reportParam(kPidMPEPerNoteEffectiveBendRange, enginePerNoteRange);
+        }
+        if (masterLastRpn != _lastReportedMasterLastRpn) {
+            _lastReportedMasterLastRpn = masterLastRpn;
+            reportParam(kPidMPEMasterBendLastRpn, masterLastRpn);
+        }
+        if (perNoteLastRpn != _lastReportedPerNoteLastRpn) {
+            _lastReportedPerNoteLastRpn = perNoteLastRpn;
+            reportParam(kPidMPEPerNoteBendLastRpn, perNoteLastRpn);
+        }
+    }
 
     // Update levels, if editor is open, otherwise skip
     RMSFollower& rmsFollower = _rmsFollower;
@@ -464,10 +569,33 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
     case kPidSustainCancelsRelease:
         _state.sustainCancelsRelease = (range.denormalize(value) > 0.0f);
         break;
+    case kPidMPEEnabled:
+        _state.mpeEnabled = (range.denormalize(value) > 0.0f);
+        break;
+    case kPidMPEMasterPitchBendRange:
+        _state.mpeMasterPitchBendRange = range.denormalize(value);
+        break;
+    case kPidMPEPerNotePitchBendRange:
+        _state.mpePerNotePitchBendRange = range.denormalize(value);
+        break;
+    case kPidMPEMasterBendIgnoreRpn:
+        _state.mpeMasterBendIgnoreRpn = (range.denormalize(value) > 0.0f);
+        break;
+    case kPidMPEPerNoteBendIgnoreRpn:
+        _state.mpePerNoteBendIgnoreRpn = (range.denormalize(value) > 0.0f);
+        break;
+    case kPidMPEIgnoreMcm:
+        _state.mpeIgnoreMcm = (range.denormalize(value) > 0.0f);
+        break;
     case kPidAftertouch:
+        // Forward as master-channel pressure (channel 0). In MPE this is the
+        // master pressure per the MPE 1.0 spec; per-channel pressure for member
+        // channels comes through other paths (Vst::Events with channel set,
+        // NoteExpression events, or per-channel paramIDs).
         synth.hdChannelAftertouch(sampleOffset, value);
         break;
     case kPidPitchBend:
+        // Same rationale as kPidAftertouch: forward as master-channel bend.
         synth.hdPitchWheel(sampleOffset, range.denormalize(value));
         break;
     case kPidEditorOpen:
@@ -476,8 +604,34 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
     default:
         if (id >= kPidCC0 && id <= kPidCCLast) {
             int32 ccNumber = static_cast<int32>(id - kPidCC0);
-            synth.automateHdcc(sampleOffset, ccNumber, value);
+            // Hosts that translate raw MIDI CC to parameter changes via
+            // IMidiMapping land here. Dispatch as channel-0 MIDI (not
+            // automation) so the engine's RPN/MCM state machine sees the
+            // CC 100/101/6 triplet; automateHdcc bypasses that path
+            // (Synth::performHdcc gates the RPN parser on asMidi=true).
+            synth.hdcc(sampleOffset, 0, ccNumber, value);
+            const uint8_t value7 = static_cast<uint8_t>(
+                std::lround(std::min(std::max(value, 0.0), 1.0) * 127.0));
+            parseAndTrackRpn(0, static_cast<uint8_t>(ccNumber), value7);
             _state.controllers[ccNumber] = value;
+        }
+        else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15) {
+            // SfizzRange denormalizes [0, 1] host-normalized to [-1, +1]
+            // plain, which is sfizz's normalized bend (mapped to
+            // ±mpePerNotePitchBendRange semitones). Dispatch unconditionally —
+            // engine collapses channel to 0 when MPE is off (see
+            // Synth::hdPitchWheel), matching the legacy single-channel
+            // contract.
+            const int channel = static_cast<int>(id - kPidMPEPitchBendCh1) + 1;
+            synth.hdPitchWheel(sampleOffset, channel, range.denormalize(value));
+        }
+        else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15) {
+            const int channel = static_cast<int>(id - kPidMPEAftertouchCh1) + 1;
+            synth.hdChannelAftertouch(sampleOffset, channel, value);
+        }
+        else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15) {
+            const int channel = static_cast<int>(id - kPidMPECC74Ch1) + 1;
+            synth.hdcc(sampleOffset, channel, 74, value);
         }
         break;
     }
@@ -491,37 +645,206 @@ void SfizzVstProcessor::playOrderedEvent(const Vst::Event& event)
     sfz::Sfizz& synth = *_synth;
     const int32 sampleOffset = event.sampleOffset;
 
+    // Dispatch unconditionally through the *MPE entry points — the engine
+    // normalizes channel to 0 internally when MPE is disabled, so this path
+    // is byte-for-byte equivalent to the legacy non-MPE API in that case.
+    // Single source of truth for "MPE off means single channel" lives in
+    // sfz::Synth, not the wrapper.
     switch (event.type) {
     case Vst::Event::kNoteOnEvent: {
         int pitch = event.noteOn.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
+        const int channel = event.noteOn.channel;
         if (event.noteOn.velocity <= 0.0f) {
-            synth.noteOff(sampleOffset, pitch, 0);
+            synth.noteOff(sampleOffset, channel, pitch, 0);
             _noteEventsCurrentCycle[pitch] = 0.0f;
+            clearActiveNote(event.noteOn.noteId);
         }
         else {
-            synth.hdNoteOn(sampleOffset, pitch, event.noteOn.velocity);
+            synth.hdNoteOn(sampleOffset, channel, pitch, event.noteOn.velocity);
+            registerActiveNote(event.noteOn.noteId, static_cast<int16>(channel));
             _noteEventsCurrentCycle[pitch] = event.noteOn.velocity;
         }
         break;
     }
     case Vst::Event::kNoteOffEvent: {
-        int pitch = event.noteOn.pitch;
+        int pitch = event.noteOff.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdNoteOff(sampleOffset, pitch, event.noteOff.velocity);
+        synth.hdNoteOff(sampleOffset, event.noteOff.channel, pitch, event.noteOff.velocity);
         _noteEventsCurrentCycle[pitch] = 0.0f;
+        clearActiveNote(event.noteOff.noteId);
         break;
     }
     case Vst::Event::kPolyPressureEvent: {
         int pitch = event.polyPressure.pitch;
         if (pitch < 0 || pitch >= 128)
             break;
-        synth.hdPolyAftertouch(sampleOffset, pitch, event.polyPressure.pressure);
+        synth.hdPolyAftertouch(sampleOffset, event.polyPressure.channel, pitch, event.polyPressure.pressure);
         break;
     }
+    case Vst::Event::kNoteExpressionValueEvent: {
+        // Dispatch unconditionally — the engine collapses channel to 0 when
+        // MPE is off (see Synth::hdPitchWheel et al.), matching the legacy
+        // MIDI path's contract. Per-note bend on a member channel from an
+        // MPE-aware host therefore folds into a single channel-0 bend that
+        // moves the whole chord, just as a raw-MIDI bend on that channel
+        // would have. The wrapper's perNoteRange scaling still applies, so
+        // the audible magnitude depends on the SFZ's bend_up / bend_down
+        // range relative to mpePerNotePitchBendRange.
+        const auto& nev = event.noteExpressionValue;
+        const int channel = lookupChannelForNoteId(nev.noteId);
+        if (channel < 0)
+            break; // unknown noteId; can't correlate to a member channel
+        switch (nev.typeId) {
+        case Vst::kTuningTypeID: {
+            // VST3 plain range: 0 = -120 st, 0.5 = no bend, 1 = +120 st.
+            // sfizz expects a normalized value in [-1, 1] that maps to
+            // ±_state.mpePerNotePitchBendRange semitones.
+            const float semitones = (static_cast<float>(nev.value) - 0.5f) * 240.0f;
+            const float perNoteRange = _state.mpePerNotePitchBendRange;
+            if (perNoteRange <= 0.0f)
+                break;
+            float ratio = semitones / perNoteRange;
+            if (ratio > 1.0f) ratio = 1.0f;
+            else if (ratio < -1.0f) ratio = -1.0f;
+            synth.hdPitchWheel(sampleOffset, channel, ratio);
+            break;
+        }
+        case Vst::kVolumeTypeID: {
+            // Map normalized [0, 1] linearly to channel pressure [0, 1].
+            float v = static_cast<float>(nev.value);
+            if (v < 0.0f) v = 0.0f;
+            else if (v > 1.0f) v = 1.0f;
+            synth.hdChannelAftertouch(sampleOffset, channel, v);
+            break;
+        }
+        case Vst::kBrightnessTypeID: {
+            // Map normalized [0, 1] to CC74 [0, 1] (sfizz hd-CC).
+            float v = static_cast<float>(nev.value);
+            if (v < 0.0f) v = 0.0f;
+            else if (v > 1.0f) v = 1.0f;
+            synth.hdcc(sampleOffset, channel, 74, v);
+            break;
+        }
+        default:
+            break;
+        }
+        break;
     }
+    case Vst::Event::kLegacyMIDICCOutEvent: {
+        // Raw MIDI channel-voice messages forwarded by MPE-aware hosts. The
+        // engine normalizes channel to 0 when MPE is disabled, so these
+        // calls behave like the legacy non-MPE API in that mode.
+        const auto& midi = event.midiCCOut;
+        const int channel = midi.channel;
+        const uint8 cn = midi.controlNumber;
+        if (cn == Vst::kAfterTouch) {
+            synth.channelAftertouch(sampleOffset, channel, static_cast<uint8>(midi.value));
+        }
+        else if (cn == Vst::kPitchBend) {
+            const int raw = (int(static_cast<uint8>(midi.value2)) << 7) | int(static_cast<uint8>(midi.value));
+            synth.pitchWheel(sampleOffset, channel, raw - 8192);
+        }
+        else if (cn == Vst::kCtrlPolyPressure) {
+            synth.polyAftertouch(sampleOffset, channel,
+                static_cast<uint8>(midi.value), static_cast<uint8>(midi.value2));
+        }
+        else if (cn < 128) {
+            // Peek for RPN 0 (Pitch Bend Sensitivity) before forwarding.
+            // Engine has its own parser; this wrapper-side one tracks
+            // the last-received value per axis so the UI can render
+            // case-3 (RPN received while override is on, value shown
+            // struck through). Always-on — independent of any toggle.
+            parseAndTrackRpn(channel, cn, static_cast<uint8>(midi.value));
+            synth.cc(sampleOffset, channel, cn, static_cast<uint8>(midi.value));
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void SfizzVstProcessor::parseAndTrackRpn(int channel, uint8_t cc, uint8_t value) noexcept
+{
+    if (channel < 0 || channel >= 16)
+        return;
+    RpnParserState& s = _rpnState[static_cast<size_t>(channel)];
+    switch (cc) {
+    case 101: // RPN MSB
+        s.selectedMsb = value;
+        break;
+    case 100: // RPN LSB
+        s.selectedLsb = value;
+        break;
+    case 6:   // Data Entry MSB
+        // RPN 0/0 = Pitch Bend Sensitivity. Master channel 0 sets the
+        // master range; any member channel (1-15) sets the per-note
+        // range. Match the engine's split (Synth.cpp::handleControlChange
+        // dispatch on channel == 0 vs != 0). Commercial controllers send
+        // identical values on every member channel, so last-wins is fine.
+        if (s.selectedMsb == 0 && s.selectedLsb == 0) {
+            const float semitones = static_cast<float>(value);
+            if (channel == 0)
+                _lastReceivedMasterRpn = semitones;
+            else
+                _lastReceivedPerNoteRpn = semitones;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void SfizzVstProcessor::registerActiveNote(int32 noteId, int16 channel) noexcept
+{
+    // Refuse to track a noteId == kFreeNoteId (impossible per the VST3 spec but
+    // would corrupt our sentinel). -1 ("host doesn't track") is allowed in but
+    // collides on lookup; the host will be self-consistent for a given session.
+    if (noteId == kFreeNoteId)
+        return;
+    // Replace an existing entry with the same noteId, otherwise fill first free slot.
+    int freeSlot = -1;
+    for (size_t i = 0; i < _activeNotes.size(); ++i) {
+        if (_activeNotes[i].noteId == noteId) {
+            _activeNotes[i].channel = channel;
+            return;
+        }
+        if (freeSlot < 0 && _activeNotes[i].noteId == kFreeNoteId)
+            freeSlot = static_cast<int>(i);
+    }
+    if (freeSlot >= 0) {
+        _activeNotes[freeSlot].noteId = noteId;
+        _activeNotes[freeSlot].channel = channel;
+    }
+    // If the table is full we silently drop the registration; the worst case
+    // is that subsequent NoteExpression events for that note won't dispatch.
+}
+
+void SfizzVstProcessor::clearActiveNote(int32 noteId) noexcept
+{
+    if (noteId == kFreeNoteId)
+        return;
+    for (auto& entry : _activeNotes) {
+        if (entry.noteId == noteId) {
+            entry.noteId = kFreeNoteId;
+            entry.channel = 0;
+            return;
+        }
+    }
+}
+
+int SfizzVstProcessor::lookupChannelForNoteId(int32 noteId) const noexcept
+{
+    if (noteId == kFreeNoteId)
+        return -1;
+    for (const auto& entry : _activeNotes) {
+        if (entry.noteId == noteId)
+            return entry.channel;
+    }
+    return -1;
 }
 
 void SfizzVstProcessor::processMessagesFromUi()

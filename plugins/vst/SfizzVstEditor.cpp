@@ -356,6 +356,36 @@ void SfizzVstEditor::updateParameter(Vst::Parameter* parameterToUpdate)
         case kPidSustainCancelsRelease:
             uiReceiveValue(EditId::SustainCancelsRelease, range.denormalize(value));
             break;
+        case kPidMPEEnabled:
+            uiReceiveValue(EditId::MPEEnabled, range.denormalize(value));
+            break;
+        case kPidMPEMasterPitchBendRange:
+            uiReceiveValue(EditId::MPEMasterPitchBendRange, range.denormalize(value));
+            break;
+        case kPidMPEPerNotePitchBendRange:
+            uiReceiveValue(EditId::MPEPerNotePitchBendRange, range.denormalize(value));
+            break;
+        case kPidMPEMasterBendIgnoreRpn:
+            uiReceiveValue(EditId::MPEMasterBendIgnoreRpn, range.denormalize(value));
+            break;
+        case kPidMPEPerNoteBendIgnoreRpn:
+            uiReceiveValue(EditId::MPEPerNoteBendIgnoreRpn, range.denormalize(value));
+            break;
+        case kPidMPEIgnoreMcm:
+            uiReceiveValue(EditId::MPEIgnoreMcm, range.denormalize(value));
+            break;
+        case kPidMPEMasterEffectiveBendRange:
+            uiReceiveValue(EditId::MPEMasterEffectiveBendRange, range.denormalize(value));
+            break;
+        case kPidMPEPerNoteEffectiveBendRange:
+            uiReceiveValue(EditId::MPEPerNoteEffectiveBendRange, range.denormalize(value));
+            break;
+        case kPidMPEMasterBendLastRpn:
+            uiReceiveValue(EditId::MPEMasterBendLastRpn, range.denormalize(value));
+            break;
+        case kPidMPEPerNoteBendLastRpn:
+            uiReceiveValue(EditId::MPEPerNoteBendLastRpn, range.denormalize(value));
+            break;
         case kPidNumOutputs:
             uiReceiveValue(EditId::PluginOutputs, (int32)range.denormalize(value));
             break;
@@ -427,6 +457,24 @@ void SfizzVstEditor::uiSendValue(EditId id, const EditValue& v)
             break;
         case EditId::SustainCancelsRelease:
             normalizeAndSet(kPidSustainCancelsRelease, v.to_float());
+            break;
+        case EditId::MPEEnabled:
+            normalizeAndSet(kPidMPEEnabled, v.to_float());
+            break;
+        case EditId::MPEMasterPitchBendRange:
+            normalizeAndSet(kPidMPEMasterPitchBendRange, v.to_float());
+            break;
+        case EditId::MPEPerNotePitchBendRange:
+            normalizeAndSet(kPidMPEPerNotePitchBendRange, v.to_float());
+            break;
+        case EditId::MPEMasterBendIgnoreRpn:
+            normalizeAndSet(kPidMPEMasterBendIgnoreRpn, v.to_float());
+            break;
+        case EditId::MPEPerNoteBendIgnoreRpn:
+            normalizeAndSet(kPidMPEPerNoteBendIgnoreRpn, v.to_float());
+            break;
+        case EditId::MPEIgnoreMcm:
+            normalizeAndSet(kPidMPEIgnoreMcm, v.to_float());
             break;
         case EditId::UserFilesDir:
             SfizzPaths::setSfzConfigDefaultPath(fs::u8path(v.to_string()));

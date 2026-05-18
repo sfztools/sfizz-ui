@@ -106,6 +106,12 @@ struct Editor::Impl : EditorController::Receiver,
         kTagSetFreewheelingSampleQuality,
         kTagSetFreewheelingOscillatorQuality,
         kTagSetSustainCancelsRelease,
+        kTagSetMPEEnabled,
+        kTagSetMPEMasterPitchBendRange,
+        kTagSetMPEPerNotePitchBendRange,
+        kTagSetMPEMasterBendIgnoreRpn,
+        kTagSetMPEPerNoteBendIgnoreRpn,
+        kTagSetMPEIgnoreMcm,
         kTagSetCCVolume,
         kTagSetCCPan,
         kTagChooseUserFilesDir,
@@ -142,6 +148,28 @@ struct Editor::Impl : EditorController::Receiver,
     SValueMenu *freewheelingSampleQualitySlider_ = nullptr;
     SValueMenu *freewheelingOscillatorQualitySlider_ = nullptr;
     CCheckBox *sustainCancelsReleaseCheckbox_ = nullptr;
+    CCheckBox *mpeEnabledCheckbox_ = nullptr;
+    SValueMenu *mpeMasterPitchBendRangeSlider_ = nullptr;
+    SValueMenu *mpePerNotePitchBendRangeSlider_ = nullptr;
+    CCheckBox *mpeMasterBendIgnoreRpnCheckbox_ = nullptr;
+    CCheckBox *mpePerNoteBendIgnoreRpnCheckbox_ = nullptr;
+    CCheckBox *mpeIgnoreMcmCheckbox_ = nullptr;
+    SStrikethroughLabel* mpeMasterEffectiveBendDisplay_ = nullptr;
+    SStrikethroughLabel* mpePerNoteEffectiveBendDisplay_ = nullptr;
+
+    // Editor-side state used to recompute the "Current X bend value"
+    // read-out. Effective bend ranges and last-received RPN come from
+    // the engine via EditIds; the ignore flags come from the user's
+    // checkboxes. -1 in lastRpn = no RPN received yet (sentinel matches
+    // the wrapper-side encoding in SfizzVstProcessor).
+    float mpeMasterEffectiveBend_ { 2.0f };
+    float mpePerNoteEffectiveBend_ { 48.0f };
+    float mpeMasterLastRpn_ { -1.0f };
+    float mpePerNoteLastRpn_ { -1.0f };
+    bool mpeMasterIgnoreRpn_ { false };
+    bool mpePerNoteIgnoreRpn_ { false };
+    void updateMpeMasterBendDisplay();
+    void updateMpePerNoteBendDisplay();
     CTextLabel* keyswitchLabel_ = nullptr;
     CTextLabel* keyswitchInactiveLabel_ = nullptr;
     CTextLabel* keyswitchBadge_ = nullptr;
@@ -203,6 +231,43 @@ struct Editor::Impl : EditorController::Receiver,
 
     void createFrameContents();
     SLevelMeter* createVMeter(const CRect& bounds, int, const char*, CHoriTxtAlign, int);
+
+    // Drives the editor's in-frame `lblHover_` text label on mouse enter/exit
+    // for views that don't already have OnHoverEnter/OnHoverLeave hooks
+    // (CCheckBox, etc). Used in place of VSTGUI's CTooltipSupport because the
+    // latter creates a separate borderless NSWindow, which AU host sandboxes
+    // (Logic in particular) won't display above the plug-in view.
+    struct HoverTextListener : public IViewEventListener {
+        Impl* impl { nullptr };
+        CView* view { nullptr };
+        std::string text;
+        HoverTextListener(Impl* i, CView* v, std::string t)
+            : impl(i), view(v), text(std::move(t))
+        {
+            if (view)
+                view->registerViewEventListener(this);
+        }
+        ~HoverTextListener() noexcept
+        {
+            if (view)
+                view->unregisterViewEventListener(this);
+        }
+        HoverTextListener(const HoverTextListener&) = delete;
+        HoverTextListener& operator=(const HoverTextListener&) = delete;
+
+        void viewOnEvent(CView* v, Event& event) override
+        {
+            if (event.type == EventType::MouseEnter) {
+                if (auto* ctrl = dynamic_cast<CControl*>(v))
+                    impl->buttonHoverEnter(ctrl, text.c_str());
+            }
+            else if (event.type == EventType::MouseExit) {
+                if (auto* ctrl = dynamic_cast<CControl*>(v))
+                    impl->buttonHoverLeave(ctrl);
+            }
+        }
+    };
+    std::vector<std::unique_ptr<HoverTextListener>> hoverTextListeners_;
 
     template <class Control>
     void adjustMinMaxToEditRange(Control* c, EditId id)
@@ -374,6 +439,50 @@ SLevelMeter* Editor::Impl::createVMeter(const CRect& bounds, int, const char*, C
     return meter;
 };
 
+namespace {
+    // Render an integer semitone count for the bend-range read-out.
+    // Empty string when value < 0 (sentinel for "not received").
+    void setBendDisplayValue(SStrikethroughLabel* label, float value, bool strikethrough)
+    {
+        if (!label)
+            return;
+        if (value < 0) {
+            label->setText("");
+        }
+        else {
+            char buf[16];
+            std::snprintf(buf, sizeof(buf), "%d", static_cast<int>(std::round(value)));
+            label->setText(buf);
+        }
+        label->setStrikethrough(strikethrough);
+        label->invalid();
+    }
+}
+
+void Editor::Impl::updateMpeMasterBendDisplay()
+{
+    // Cases:
+    //   override on  + RPN received -> show last RPN, struck through
+    //   anything else                -> show engine's effective range
+    // Display is always an integer semitone count (last RPN is always
+    // an integer 0..96 from the wrapper-side parser; effective range
+    // is rounded for display).
+    const bool rpnReceived = (mpeMasterLastRpn_ >= 0.0f);
+    if (mpeMasterIgnoreRpn_ && rpnReceived)
+        setBendDisplayValue(mpeMasterEffectiveBendDisplay_, mpeMasterLastRpn_, true);
+    else
+        setBendDisplayValue(mpeMasterEffectiveBendDisplay_, mpeMasterEffectiveBend_, false);
+}
+
+void Editor::Impl::updateMpePerNoteBendDisplay()
+{
+    const bool rpnReceived = (mpePerNoteLastRpn_ >= 0.0f);
+    if (mpePerNoteIgnoreRpn_ && rpnReceived)
+        setBendDisplayValue(mpePerNoteEffectiveBendDisplay_, mpePerNoteLastRpn_, true);
+    else
+        setBendDisplayValue(mpePerNoteEffectiveBendDisplay_, mpePerNoteEffectiveBend_, false);
+}
+
 void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
 {
     switch (id) {
@@ -497,6 +606,94 @@ void Editor::Impl::uiReceiveValue(EditId id, const EditValue& v)
                 checkbox->invalid();
             }
         }
+        break;
+    case EditId::MPEEnabled:
+        {
+            const bool value = v.to_float();
+            if (CControl* checkbox = mpeEnabledCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+        }
+        break;
+    case EditId::MPEMasterPitchBendRange:
+        {
+            const float value = v.to_float();
+            if (SValueMenu* slider = mpeMasterPitchBendRangeSlider_) {
+                slider->setValue(value);
+                slider->invalid();
+            }
+        }
+        break;
+    case EditId::MPEPerNotePitchBendRange:
+        {
+            const float value = v.to_float();
+            if (SValueMenu* slider = mpePerNotePitchBendRangeSlider_) {
+                slider->setValue(value);
+                slider->invalid();
+            }
+        }
+        break;
+    case EditId::MPEMasterBendIgnoreRpn:
+        {
+            const bool value = v.to_float();
+            mpeMasterIgnoreRpn_ = value;
+            if (CControl* checkbox = mpeMasterBendIgnoreRpnCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+            // Bend-range menu is only user-editable when the matching
+            // "Ignore RPN" toggle is on: otherwise the engine is the
+            // source of truth (driven by incoming RPN 0) and the menu
+            // value is just a read-out of current state.
+            if (SValueMenu* slider = mpeMasterPitchBendRangeSlider_) {
+                slider->setMouseEnabled(value);
+                slider->setAlphaValue(value ? 1.0f : 0.5f);
+                slider->invalid();
+            }
+            updateMpeMasterBendDisplay();
+        }
+        break;
+    case EditId::MPEPerNoteBendIgnoreRpn:
+        {
+            const bool value = v.to_float();
+            mpePerNoteIgnoreRpn_ = value;
+            if (CControl* checkbox = mpePerNoteBendIgnoreRpnCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+            if (SValueMenu* slider = mpePerNotePitchBendRangeSlider_) {
+                slider->setMouseEnabled(value);
+                slider->setAlphaValue(value ? 1.0f : 0.5f);
+                slider->invalid();
+            }
+            updateMpePerNoteBendDisplay();
+        }
+        break;
+    case EditId::MPEIgnoreMcm:
+        {
+            const bool value = v.to_float();
+            if (CControl* checkbox = mpeIgnoreMcmCheckbox_) {
+                checkbox->setValue(value);
+                checkbox->invalid();
+            }
+        }
+        break;
+    case EditId::MPEMasterEffectiveBendRange:
+        mpeMasterEffectiveBend_ = v.to_float();
+        updateMpeMasterBendDisplay();
+        break;
+    case EditId::MPEPerNoteEffectiveBendRange:
+        mpePerNoteEffectiveBend_ = v.to_float();
+        updateMpePerNoteBendDisplay();
+        break;
+    case EditId::MPEMasterBendLastRpn:
+        mpeMasterLastRpn_ = v.to_float();
+        updateMpeMasterBendDisplay();
+        break;
+    case EditId::MPEPerNoteBendLastRpn:
+        mpePerNoteLastRpn_ = v.to_float();
+        updateMpePerNoteBendDisplay();
         break;
     case EditId::CanEditUserFilesDir:
         {
@@ -1110,6 +1307,19 @@ void Editor::Impl::createFrameContents()
             return checkbox;
         };
 
+        auto createStrikethroughLabel = [this, &palette](const CRect& bounds, int, const char* label, CHoriTxtAlign align, int fontsize) {
+            auto* lbl = new SStrikethroughLabel(bounds, label);
+            lbl->setFrameColor(kColorTransparent);
+            lbl->setBackColor(kColorTransparent);
+            OnThemeChanged.push_back([lbl, palette]() {
+                lbl->setFontColor(palette->text);
+            });
+            lbl->setHoriAlign(align);
+            auto font = makeOwned<CFontDesc>("Roboto", fontsize);
+            lbl->setFont(font);
+            return lbl;
+        };
+
         auto createTextEdit = [this, &palette] (const CRect& bounds, int tag, const char* label, CHoriTxtAlign align, int fontsize) {
             auto* edit = new STextEdit(bounds, this, tag, label, nullptr);
             auto font = makeOwned<CFontDesc>("Roboto", fontsize);
@@ -1213,7 +1423,31 @@ void Editor::Impl::createFrameContents()
     adjustMinMaxToEditRange(freewheelingSampleQualitySlider_, EditId::FreewheelingSampleQuality);
     adjustMinMaxToEditRange(freewheelingOscillatorQualitySlider_, EditId::FreewheelingOscillatorQuality);
     adjustMinMaxToEditRange(sustainCancelsReleaseCheckbox_, EditId::SustainCancelsRelease);
+    adjustMinMaxToEditRange(mpeEnabledCheckbox_, EditId::MPEEnabled);
+    adjustMinMaxToEditRange(mpeMasterPitchBendRangeSlider_, EditId::MPEMasterPitchBendRange);
+    adjustMinMaxToEditRange(mpePerNotePitchBendRangeSlider_, EditId::MPEPerNotePitchBendRange);
+    adjustMinMaxToEditRange(mpeMasterBendIgnoreRpnCheckbox_, EditId::MPEMasterBendIgnoreRpn);
+    adjustMinMaxToEditRange(mpePerNoteBendIgnoreRpnCheckbox_, EditId::MPEPerNoteBendIgnoreRpn);
+    adjustMinMaxToEditRange(mpeIgnoreMcmCheckbox_, EditId::MPEIgnoreMcm);
     adjustMinMaxToEditRange(zoomMenu_, EditId::UIZoom);
+
+    // Hover-text for the three MPE auto-config opt-outs. The "Ignore X"
+    // labels are necessarily terse — the panel column is narrow — and the
+    // pin-vs-controller-driven semantics aren't obvious from the label
+    // alone. Routed through the existing `lblHover_` in-frame label
+    // rather than VSTGUI tooltips, which don't display in AU hosts that
+    // sandbox out child NSWindows.
+    auto installHoverText = [this](CView* v, const char* text) {
+        if (v && text && *text)
+            hoverTextListeners_.push_back(
+                std::make_unique<HoverTextListener>(this, v, std::string(text)));
+    };
+    installHoverText(mpeIgnoreMcmCheckbox_,
+        "Pin MPE on/off to this panel; ignore RPN 6 (MCM) from controller");
+    installHoverText(mpeMasterBendIgnoreRpnCheckbox_,
+        "Pin master bend to value below; ignore Manager-channel RPN 0");
+    installHoverText(mpePerNoteBendIgnoreRpnCheckbox_,
+        "Pin per-note bend to value below; ignore Member-channel RPN 0");
 
     for (int value : {1, 2, 4, 8, 16, 32, 64, 96, 128, 160, 192, 224, 256})
         numVoicesSlider_->addEntry(std::to_string(value), value);
@@ -1240,6 +1474,26 @@ void Editor::Impl::createFrameContents()
             result = std::to_string(static_cast<int>(value) * 100) + "%";
             return true;
         });
+
+    // MPE bend-range presets. Covers the MPE 1.0 defaults (Master 2,
+    // Member 48) and the common deviations: ±1 / ±7 (Osmose / a few
+    // controllers) / ±12 (octave) / ±24 (two octaves) / ±36 (Roli
+    // legacy) / ±48 / ±60 / ±72 / ±96. EditRange caps both at 96.
+    static const int kPitchBendRangeValues[] = { 1, 2, 7, 12, 24, 36, 48, 60, 72, 96 };
+    for (int value : kPitchBendRangeValues)
+        mpeMasterPitchBendRangeSlider_->addEntry(std::to_string(value), value);
+    for (int value : kPitchBendRangeValues)
+        mpePerNotePitchBendRangeSlider_->addEntry(std::to_string(value), value);
+
+    // Bend ranges are whole semitones — render the display as an integer
+    // rather than the float-default "2.00" / "48.00".
+    auto bendRangeIntFormatter = [](float value, std::string& result, CParamDisplay*) -> bool
+    {
+        result = std::to_string(static_cast<int>(std::round(value)));
+        return true;
+    };
+    mpeMasterPitchBendRangeSlider_->setValueToStringFunction2(bendRangeIntFormatter);
+    mpePerNotePitchBendRangeSlider_->setValueToStringFunction2(bendRangeIntFormatter);
 
     for (int log2value = 10; log2value <= 16; ++log2value) {
         int value = 1 << log2value;
@@ -1817,7 +2071,23 @@ void Editor::Impl::buttonHoverEnter(CControl* btn, const char* text)
     lblHover_->setText(text);
     lblHover_->sizeToFit();
     CRect rect = lblHover_->getViewSize();
+
+    // Translate the button's view rect from its parent's coord space into
+    // lblHover_'s parent's coord space. For the nav buttons at the top of
+    // the editor (where this was originally used) btn and lblHover_ share
+    // mainView as parent, so the transform is identity and behavior is
+    // unchanged. For controls nested inside sub-panels (the MPE settings
+    // checkboxes for example), the transform is non-trivial and without it
+    // the hover label lands somewhere arbitrary — and, because the label
+    // is mouse-enabled by default, it can steal hover from the underlying
+    // control, producing a show/hide flicker as the cursor bounces between
+    // checkbox and stray label.
     CRect btnRect = btn->getViewSize();
+    if (auto* btnParent = btn->getParentView())
+        btnParent->translateToGlobal(btnRect);
+    if (auto* hoverParent = lblHover_->getParentView())
+        hoverParent->translateToLocal(btnRect);
+
     auto height = rect.getHeight();
     auto width = rect.getWidth();
     rect.left = btnRect.left;
@@ -1825,6 +2095,7 @@ void Editor::Impl::buttonHoverEnter(CControl* btn, const char* text)
     rect.setWidth(width + 10);
     rect.setHeight(height);
     lblHover_->setViewSize(rect);
+    lblHover_->setMouseEnabled(false);
     lblHover_->setVisible(true);
     lblHover_->invalid();
 }
@@ -2229,6 +2500,30 @@ void Editor::Impl::valueChanged(CControl* ctl)
 
     case kTagSetSustainCancelsRelease:
         ctrl.uiSendValue(EditId::SustainCancelsRelease, value);
+        break;
+
+    case kTagSetMPEEnabled:
+        ctrl.uiSendValue(EditId::MPEEnabled, value);
+        break;
+
+    case kTagSetMPEMasterPitchBendRange:
+        ctrl.uiSendValue(EditId::MPEMasterPitchBendRange, value);
+        break;
+
+    case kTagSetMPEPerNotePitchBendRange:
+        ctrl.uiSendValue(EditId::MPEPerNotePitchBendRange, value);
+        break;
+
+    case kTagSetMPEMasterBendIgnoreRpn:
+        ctrl.uiSendValue(EditId::MPEMasterBendIgnoreRpn, value);
+        break;
+
+    case kTagSetMPEPerNoteBendIgnoreRpn:
+        ctrl.uiSendValue(EditId::MPEPerNoteBendIgnoreRpn, value);
+        break;
+
+    case kTagSetMPEIgnoreMcm:
+        ctrl.uiSendValue(EditId::MPEIgnoreMcm, value);
         break;
 
     case kTagSetStretchedTuning:

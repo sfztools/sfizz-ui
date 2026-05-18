@@ -188,11 +188,15 @@ static void sfizz_tilde_midiin(t_sfizz_tilde* self, t_float f)
         midinum = -1;
 
     //
+    // Channel from the MIDI status byte low-nibble. The *_mpe variants below
+    // forward to the non-MPE path when channel == 0 (master), so this is
+    // correct regardless of whether MPE mode is enabled on the synth.
+    const int channel = midi[0] & 0x0F;
     switch (midinum) {
     case 2:
         switch (midi[0] & 0xf0) {
         case 0xd0: // channel aftertouch
-            sfizz_send_channel_aftertouch(self->synth, 0, midi[1]);
+            sfizz_send_channel_aftertouch_mpe(self->synth, 0, channel, midi[1]);
             break;
         }
         break;
@@ -201,20 +205,20 @@ static void sfizz_tilde_midiin(t_sfizz_tilde* self, t_float f)
         case 0x90: // note on
             if (midi[2] == 0)
                 goto noteoff;
-            sfizz_send_note_on(self->synth, 0, midi[1], midi[2]);
+            sfizz_send_note_on_mpe(self->synth, 0, channel, midi[1], midi[2]);
             break;
         case 0x80: // note off
         noteoff:
-            sfizz_send_note_off(self->synth, 0, midi[1], midi[2]);
+            sfizz_send_note_off_mpe(self->synth, 0, channel, midi[1], midi[2]);
             break;
         case 0xb0: // controller
-            sfizz_send_cc(self->synth, 0, midi[1], midi[2]);
+            sfizz_send_cc_mpe(self->synth, 0, channel, midi[1], midi[2]);
             break;
         case 0xa0: // key aftertouch
-            sfizz_send_poly_aftertouch(self->synth, 0, midi[1], midi[2]);
+            sfizz_send_poly_aftertouch_mpe(self->synth, 0, channel, midi[1], midi[2]);
             break;
         case 0xe0: // pitch bend
-            sfizz_send_pitch_wheel(self->synth, 0, (midi[1] + (midi[2] << 7)) - 8192);
+            sfizz_send_pitch_wheel_mpe(self->synth, 0, channel, (midi[1] + (midi[2] << 7)) - 8192);
             break;
         }
         break;

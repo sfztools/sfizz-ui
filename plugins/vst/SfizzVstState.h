@@ -30,10 +30,26 @@ public:
     int32 freewheelingSampleQuality = 10;
     int32 freewheelingOscillatorQuality = 3;
     bool sustainCancelsRelease = false;
+    bool mpeEnabled = false;
+    float mpeMasterPitchBendRange = 2.0f;
+    float mpePerNotePitchBendRange = 48.0f;
+    // Opt-outs for MPE auto-config: pin the wrapper-side value against
+    // incoming RPN. Stored with "Ignore" semantics so the persisted value
+    // matches the editor's checkbox label; default false (accept RPN).
+    // - mpeMasterBendIgnoreRpn / mpePerNoteBendIgnoreRpn: RPN 0 (Pitch
+    //   Bend Sensitivity), per axis.
+    // - mpeIgnoreMcm: RPN 6 (MCM enable/disable). When true, the wrapper
+    //   drops engine-driven mpeEnabled flips and re-asserts the user's
+    //   toggle into the engine. Spec-permitted opt-out per MPE 1.0
+    //   Appendix A.1; default is honor (false), matching the §2.2.1
+    //   `shall` clause for MPE-compatible receivers.
+    bool mpeMasterBendIgnoreRpn = false;
+    bool mpePerNoteBendIgnoreRpn = false;
+    bool mpeIgnoreMcm = false;
     int32 lastKeyswitch = -1;
     std::vector<absl::optional<float>> controllers;
 
-    static constexpr uint64 currentStateVersion = 5;
+    static constexpr uint64 currentStateVersion = 8;
 
     tresult load(IBStream* state);
     tresult store(IBStream* state) const;

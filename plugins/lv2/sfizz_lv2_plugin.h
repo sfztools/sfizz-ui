@@ -50,6 +50,9 @@ struct sfizz_plugin_t
     const float *freewheeling_sample_quality_port {};
     const float *freewheeling_oscillator_quality_port {};
     const float *sustain_cancels_release_port {};
+    const float *mpe_enabled_port {};
+    const float *mpe_master_pitch_bend_range_port {};
+    const float *mpe_per_note_pitch_bend_range_port {};
     float *active_voices_port {};
     float *num_curves_port {};
     float *num_masters_port {};

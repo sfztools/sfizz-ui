@@ -269,6 +269,15 @@ connect_port_stereo(LV2_Handle instance,
     case SFIZZ_SUSTAIN_CANCELS_RELEASE:
         self->sustain_cancels_release_port = (const float *)data;
         break;
+    case SFIZZ_MPE_ENABLED:
+        self->mpe_enabled_port = (const float *)data;
+        break;
+    case SFIZZ_MPE_MASTER_PITCH_BEND_RANGE:
+        self->mpe_master_pitch_bend_range_port = (const float *)data;
+        break;
+    case SFIZZ_MPE_PER_NOTE_PITCH_BEND_RANGE:
+        self->mpe_per_note_pitch_bend_range_port = (const float *)data;
+        break;
     default:
         break;
     }
@@ -392,6 +401,15 @@ connect_port_multi(LV2_Handle instance,
         break;
     case SFIZZ_MULTI_SUSTAIN_CANCELS_RELEASE:
         self->sustain_cancels_release_port = (const float *)data;
+        break;
+    case SFIZZ_MULTI_MPE_ENABLED:
+        self->mpe_enabled_port = (const float *)data;
+        break;
+    case SFIZZ_MULTI_MPE_MASTER_PITCH_BEND_RANGE:
+        self->mpe_master_pitch_bend_range_port = (const float *)data;
+        break;
+    case SFIZZ_MULTI_MPE_PER_NOTE_PITCH_BEND_RANGE:
+        self->mpe_per_note_pitch_bend_range_port = (const float *)data;
         break;
     default:
         break;
@@ -866,22 +884,28 @@ static void
 sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
 {
     const uint8_t *const msg = (const uint8_t *)(ev + 1);
+    // MIDI channel from the status byte. The *_mpe variants below forward to
+    // the non-MPE path when channel == 0 (master), so this routing is correct
+    // regardless of whether MPE mode is enabled on the synth.
+    const int channel = (int)(msg[0] & 0x0F);
     switch (lv2_midi_message_type(msg))
     {
     case LV2_MIDI_MSG_NOTE_ON:
         if (msg[2] == 0)
             goto noteoff; // 0 velocity note-ons should be forbidden but just in case...
 
-        sfizz_send_note_on(self->synth,
-                           (int)ev->time.frames,
-                           (int)msg[1],
-                           msg[2]);
+        sfizz_send_note_on_channel(self->synth,
+                               (int)ev->time.frames,
+                               channel,
+                               (int)msg[1],
+                               msg[2]);
         break;
     case LV2_MIDI_MSG_NOTE_OFF: noteoff:
-        sfizz_send_note_off(self->synth,
-                            (int)ev->time.frames,
-                            (int)msg[1],
-                            msg[2]);
+        sfizz_send_note_off_channel(self->synth,
+                                (int)ev->time.frames,
+                                channel,
+                                (int)msg[1],
+                                msg[2]);
         break;
     case LV2_MIDI_MSG_CONTROLLER:
         {
@@ -895,8 +919,9 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
             {
             default:
                 {
-                    sfizz_automate_hdcc(self->synth,
+                    sfizz_send_hdcc_channel(self->synth,
                                         (int)ev->time.frames,
+                                        channel,
                                         (int)cc,
                                         value);
                     self->cc_current[cc] = value;
@@ -914,19 +939,22 @@ sfizz_lv2_process_midi_event(sfizz_plugin_t *self, const LV2_Atom_Event *ev)
         }
         break;
     case LV2_MIDI_MSG_CHANNEL_PRESSURE:
-        sfizz_send_channel_aftertouch(self->synth,
+        sfizz_send_channel_aftertouch_channel(self->synth,
                       (int)ev->time.frames,
+                      channel,
                       msg[1]);
         break;
     case LV2_MIDI_MSG_NOTE_PRESSURE:
-        sfizz_send_poly_aftertouch(self->synth,
+        sfizz_send_poly_aftertouch_channel(self->synth,
                       (int)ev->time.frames,
+                      channel,
                       (int)msg[1],
                       msg[2]);
         break;
     case LV2_MIDI_MSG_BENDER:
-        sfizz_send_pitch_wheel(self->synth,
+        sfizz_send_pitch_wheel_channel(self->synth,
                         (int)ev->time.frames,
+                        channel,
                         PITCH_BUILD_AND_CENTER(msg[1], msg[2]));
         break;
     case LV2_MIDI_MSG_PGM_CHANGE:
@@ -1212,6 +1240,8 @@ run(LV2_Handle instance, uint32_t sample_count)
     sfizz_set_sample_quality(self->synth, SFIZZ_PROCESS_FREEWHEELING, (int)(*self->freewheeling_sample_quality_port));
     sfizz_set_oscillator_quality(self->synth, SFIZZ_PROCESS_FREEWHEELING, (int)(*self->freewheeling_oscillator_quality_port));
     sfizz_set_sustain_cancels_release(self->synth, (*self->sustain_cancels_release_port > 0.0f));
+    sfizz_set_mpe_enabled(self->synth, (*self->mpe_enabled_port > 0.0f));
+    sfizz_set_mpe_pitch_bend_range(self->synth, *self->mpe_master_pitch_bend_range_port, *self->mpe_per_note_pitch_bend_range_port);
     sfizz_lv2_check_stretch_tuning(self);
     sfizz_lv2_check_preload_size(self);
     sfizz_lv2_check_oversampling(self);

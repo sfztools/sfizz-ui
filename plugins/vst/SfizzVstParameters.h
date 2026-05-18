@@ -25,6 +25,9 @@ enum {
     kPidFreewheelingSampleQuality,
     kPidFreewheelingOscillatorQuality,
     kPidSustainCancelsRelease,
+    kPidMPEEnabled,
+    kPidMPEMasterPitchBendRange,
+    kPidMPEPerNotePitchBendRange,
     kPidAftertouch,
     kPidPitchBend,
     kPidCC0,
@@ -34,6 +37,48 @@ enum {
     kPidLevelLast = kPidLevel0 + 16,
     kPidEditorOpen,
     /* Reserved */
+
+    // Per-member-channel MPE pitch bend / aftertouch / CC74.
+    // Hosts (Ableton Live in particular) deliver per-channel MIDI to VST3
+    // plug-ins through IMidiMapping → parameter changes; if the plug-in
+    // returns the same paramID for every channel, per-note expression
+    // collapses to the master. These per-channel IDs let getMidiController-
+    // Assignment hand each member channel (1..15) its own slot, which
+    // playOrderedParameter then routes to the channel-aware *MPE engine
+    // method.
+    kPidMPEPitchBendCh1,
+    kPidMPEPitchBendCh15 = kPidMPEPitchBendCh1 + 14,
+    kPidMPEAftertouchCh1,
+    kPidMPEAftertouchCh15 = kPidMPEAftertouchCh1 + 14,
+    kPidMPECC74Ch1,
+    kPidMPECC74Ch15 = kPidMPECC74Ch1 + 14,
+
+    // MPE auto-config opt-outs. The engine parses RPN 6 (MCM)
+    // and RPN 0 (Pitch Bend Sensitivity) per MPE 1.0; these flags
+    // let the user veto each auto-config axis independently. Placed
+    // at the end of the parameter block so the pre-existing kPid
+    // values don't shift.
+    // - kPidMPEMasterBendIgnoreRpn / kPidMPEPerNoteBendIgnoreRpn:
+    //   pin the wrapper-side bend ranges against incoming RPN 0.
+    // - kPidMPEIgnoreMcm: pin kPidMPEEnabled against incoming RPN 6
+    //   (MCM). When set, wrapper re-asserts its mpeEnabled value into
+    //   the engine on any engine-driven flip. Spec-permitted opt-out
+    //   per MPE 1.0 Appendix A.1.
+    kPidMPEMasterBendIgnoreRpn,
+    kPidMPEPerNoteBendIgnoreRpn,
+    kPidMPEIgnoreMcm,
+
+    // Read-only mirrors of the engine's effective bend ranges (after
+    // RPN / override resolution) and "has any RPN been received?" flags.
+    // Used by the editor's "Current X bend value" read-out beside each
+    // override row, including the case-3 strikethrough display when an
+    // RPN is being ignored. Not host-automatable; the wrapper drives
+    // them via reportParam from process().
+    kPidMPEMasterEffectiveBendRange,
+    kPidMPEPerNoteEffectiveBendRange,
+    kPidMPEMasterBendLastRpn,
+    kPidMPEPerNoteBendLastRpn,
+
     kNumParameters,
 };
 
@@ -87,6 +132,28 @@ struct SfizzRange {
             return {3.0, 0.0, 3.0};
         case kPidSustainCancelsRelease:
             return {0.0, 0.0, 1.0};
+        case kPidMPEEnabled:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEMasterPitchBendRange:
+            return {2.0, 0.0, 96.0};
+        case kPidMPEPerNotePitchBendRange:
+            return {48.0, 0.0, 96.0};
+        case kPidMPEMasterBendIgnoreRpn:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEPerNoteBendIgnoreRpn:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEIgnoreMcm:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEMasterEffectiveBendRange:
+            return {2.0, 0.0, 96.0};
+        case kPidMPEPerNoteEffectiveBendRange:
+            return {48.0, 0.0, 96.0};
+        case kPidMPEMasterBendLastRpn:
+            // -1 sentinel = no RPN received yet on this axis; 0..96
+            // covers every valid received value.
+            return {-1.0, -1.0, 96.0};
+        case kPidMPEPerNoteBendLastRpn:
+            return {-1.0, -1.0, 96.0};
         case kPidAftertouch:
             return {0.0, 0.0, 1.0};
         case kPidPitchBend:
@@ -99,6 +166,12 @@ struct SfizzRange {
             if (id >= kPidCC0 && id <= kPidCCLast)
                 return {0.0, 0.0, 1.0};
             else if (id >= kPidLevel0 && id <= kPidLevelLast)
+                return {0.0, 0.0, 1.0};
+            else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15)
+                return {0.0, -1.0, 1.0};
+            else if (id >= kPidMPEAftertouchCh1 && id <= kPidMPEAftertouchCh15)
+                return {0.0, 0.0, 1.0};
+            else if (id >= kPidMPECC74Ch1 && id <= kPidMPECC74Ch15)
                 return {0.0, 0.0, 1.0};
             throw std::runtime_error("Bad parameter ID");
         }
