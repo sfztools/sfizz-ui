@@ -371,6 +371,9 @@ void SfizzVstEditor::updateParameter(Vst::Parameter* parameterToUpdate)
         case kPidMPEPerNoteBendIgnoreRpn:
             uiReceiveValue(EditId::MPEPerNoteBendIgnoreRpn, range.denormalize(value));
             break;
+        case kPidMPEIgnoreMcm:
+            uiReceiveValue(EditId::MPEIgnoreMcm, range.denormalize(value));
+            break;
         case kPidMPEMasterEffectiveBendRange:
             uiReceiveValue(EditId::MPEMasterEffectiveBendRange, range.denormalize(value));
             break;
@@ -469,6 +472,9 @@ void SfizzVstEditor::uiSendValue(EditId id, const EditValue& v)
             break;
         case EditId::MPEPerNoteBendIgnoreRpn:
             normalizeAndSet(kPidMPEPerNoteBendIgnoreRpn, v.to_float());
+            break;
+        case EditId::MPEIgnoreMcm:
+            normalizeAndSet(kPidMPEIgnoreMcm, v.to_float());
             break;
         case EditId::UserFilesDir:
             SfizzPaths::setSfzConfigDefaultPath(fs::u8path(v.to_string()));

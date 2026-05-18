@@ -367,70 +367,80 @@ widget_class mainView {open
       }
       Fl_Box {} {
         label {MPE enabled}
-        xywh {10 225 145 25} align 20
+        xywh {10 220 145 25} align 20
         class Label
       }
       Fl_Check_Button mpeEnabledCheckbox_ {
         comment {tag=kTagSetMPEEnabled}
-        xywh {180 225 25 25} down_box DOWN_BOX
+        xywh {180 220 25 25} down_box DOWN_BOX
+        class Checkbox
+      }
+      Fl_Box {} {
+        label {Ignore MCM on/off}
+        xywh {10 248 145 25} align 20
+        class Label
+      }
+      Fl_Check_Button mpeIgnoreMcmCheckbox_ {
+        comment {tag=kTagSetMPEIgnoreMcm}
+        xywh {180 248 25 25} down_box DOWN_BOX
         class Checkbox
       }
       Fl_Box {} {
         label {Ignore master bend}
-        xywh {10 255 145 25} align 20
+        xywh {10 276 145 25} align 20
         class Label
       }
       Fl_Check_Button mpeMasterBendIgnoreRpnCheckbox_ {
         comment {tag=kTagSetMPEMasterBendIgnoreRpn}
-        xywh {180 255 25 25} down_box DOWN_BOX
+        xywh {180 276 25 25} down_box DOWN_BOX
         class Checkbox
       }
       Fl_Box {} {
         label {Current master bend}
-        xywh {10 285 145 25} align 20
+        xywh {10 304 145 25} align 20
         class Label
       }
       Fl_Box mpeMasterEffectiveBendDisplay_ {
-        xywh {180 285 70 25}
+        xywh {180 304 70 25}
         class StrikethroughLabel
       }
       Fl_Box {} {
         label {MPE master bend (st)}
-        xywh {10 315 145 25} align 20
+        xywh {10 332 145 25} align 20
         class Label
       }
       Fl_Spinner mpeMasterPitchBendRangeSlider_ {
         comment {tag=kTagSetMPEMasterPitchBendRange}
-        xywh {180 315 70 25}
+        xywh {180 332 70 25}
         class ValueMenu
       }
       Fl_Box {} {
         label {Ignore per-note bend}
-        xywh {10 345 145 25} align 20
+        xywh {10 360 145 25} align 20
         class Label
       }
       Fl_Check_Button mpePerNoteBendIgnoreRpnCheckbox_ {
         comment {tag=kTagSetMPEPerNoteBendIgnoreRpn}
-        xywh {180 345 25 25} down_box DOWN_BOX
+        xywh {180 360 25 25} down_box DOWN_BOX
         class Checkbox
       }
       Fl_Box {} {
         label {Current per-note bend}
-        xywh {10 375 145 25} align 20
+        xywh {10 388 145 25} align 20
         class Label
       }
       Fl_Box mpePerNoteEffectiveBendDisplay_ {
-        xywh {180 375 70 25}
+        xywh {180 388 70 25}
         class StrikethroughLabel
       }
       Fl_Box {} {
         label {MPE per-note bend (st)}
-        xywh {10 405 145 25} align 20
+        xywh {10 416 145 25} align 20
         class Label
       }
       Fl_Spinner mpePerNotePitchBendRangeSlider_ {
         comment {tag=kTagSetMPEPerNotePitchBendRange}
-        xywh {180 405 70 25}
+        xywh {180 416 70 25}
         class ValueMenu
       }
       Fl_Box {} {

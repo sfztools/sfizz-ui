@@ -46,6 +46,8 @@ EditRange EditRange::get(EditId id)
         return { 0, 0, 1 };
     case EditId::MPEPerNoteBendIgnoreRpn:
         return { 0, 0, 1 };
+    case EditId::MPEIgnoreMcm:
+        return { 0, 0, 1 };
     case EditId::MPEMasterEffectiveBendRange:
         return { 2, 0, 96 };
     case EditId::MPEPerNoteEffectiveBendRange:

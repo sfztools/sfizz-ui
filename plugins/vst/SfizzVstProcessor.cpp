@@ -19,7 +19,9 @@
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include <ghc/fs_std.hpp>
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 
 static const char defaultSfzText[] =
@@ -403,9 +405,24 @@ tresult PLUGIN_API SfizzVstProcessor::process(Vst::ProcessData& data)
             }
         };
         if (engineMpeEnabled != _state.mpeEnabled) {
-            _state.mpeEnabled = engineMpeEnabled;
-            _lastPushedMpeEnabled = engineMpeEnabled;
-            reportParam(kPidMPEEnabled, engineMpeEnabled ? 1.0f : 0.0f);
+            if (_state.mpeIgnoreMcm) {
+                // User opted out of MCM auto-config (MPE 1.0 Appendix A.1
+                // escape hatch). The engine's RPN parser already flipped
+                // its internal mpeEnabled_; slap it back to the user's
+                // value so the dispatch gate, voice manager, and
+                // outputParameterChanges feedback all stay aligned with
+                // the UI toggle. The re-assert happens before renderBlock
+                // returns audio on this block, so notes that arrive
+                // immediately after the MCM burst route under the
+                // pinned state.
+                synth.setMPEEnabled(_state.mpeEnabled);
+                _lastPushedMpeEnabled = _state.mpeEnabled;
+            }
+            else {
+                _state.mpeEnabled = engineMpeEnabled;
+                _lastPushedMpeEnabled = engineMpeEnabled;
+                reportParam(kPidMPEEnabled, engineMpeEnabled ? 1.0f : 0.0f);
+            }
         }
         // Engine effective bend ranges are read-only UI mirrors. Emit when
         // they change; do NOT write back into _state.mpe*PitchBendRange —
@@ -567,6 +584,9 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
     case kPidMPEPerNoteBendIgnoreRpn:
         _state.mpePerNoteBendIgnoreRpn = (range.denormalize(value) > 0.0f);
         break;
+    case kPidMPEIgnoreMcm:
+        _state.mpeIgnoreMcm = (range.denormalize(value) > 0.0f);
+        break;
     case kPidAftertouch:
         // Forward as master-channel pressure (channel 0). In MPE this is the
         // master pressure per the MPE 1.0 spec; per-channel pressure for member
@@ -584,7 +604,15 @@ void SfizzVstProcessor::playOrderedParameter(int32 sampleOffset, Vst::ParamID id
     default:
         if (id >= kPidCC0 && id <= kPidCCLast) {
             int32 ccNumber = static_cast<int32>(id - kPidCC0);
-            synth.automateHdcc(sampleOffset, ccNumber, value);
+            // Hosts that translate raw MIDI CC to parameter changes via
+            // IMidiMapping land here. Dispatch as channel-0 MIDI (not
+            // automation) so the engine's RPN/MCM state machine sees the
+            // CC 100/101/6 triplet; automateHdcc bypasses that path
+            // (Synth::performHdcc gates the RPN parser on asMidi=true).
+            synth.hdcc(sampleOffset, 0, ccNumber, value);
+            const uint8_t value7 = static_cast<uint8_t>(
+                std::lround(std::min(std::max(value, 0.0), 1.0) * 127.0));
+            parseAndTrackRpn(0, static_cast<uint8_t>(ccNumber), value7);
             _state.controllers[ccNumber] = value;
         }
         else if (id >= kPidMPEPitchBendCh1 && id <= kPidMPEPitchBendCh15) {

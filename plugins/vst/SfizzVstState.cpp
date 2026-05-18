@@ -113,6 +113,14 @@ tresult SfizzVstState::load(IBStream* state)
         mpePerNoteBendIgnoreRpn = defaults.mpePerNoteBendIgnoreRpn;
     }
 
+    if (version >= 8) {
+        if (!s.readBool(mpeIgnoreMcm))
+            return kResultFalse;
+    }
+    else {
+        mpeIgnoreMcm = defaults.mpeIgnoreMcm;
+    }
+
     if (version >= 4) {
         if (!s.readInt32(lastKeyswitch))
             return kResultFalse;
@@ -205,6 +213,9 @@ tresult SfizzVstState::store(IBStream* state) const
         return kResultFalse;
 
     if (!s.writeBool(mpePerNoteBendIgnoreRpn))
+        return kResultFalse;
+
+    if (!s.writeBool(mpeIgnoreMcm))
         return kResultFalse;
 
     if (!s.writeInt32(lastKeyswitch))

@@ -28,6 +28,7 @@ enum class EditId : int {
     MPEPerNotePitchBendRange,
     MPEMasterBendIgnoreRpn,
     MPEPerNoteBendIgnoreRpn,
+    MPEIgnoreMcm,
     MPEMasterEffectiveBendRange,
     MPEPerNoteEffectiveBendRange,
     MPEMasterBendLastRpn,

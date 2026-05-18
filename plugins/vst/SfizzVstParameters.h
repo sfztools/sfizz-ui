@@ -54,12 +54,19 @@ enum {
     kPidMPECC74Ch15 = kPidMPECC74Ch1 + 14,
 
     // MPE auto-config opt-outs. The engine parses RPN 6 (MCM)
-    // and RPN 0 (Pitch Bend Sensitivity) per MPE 1.0; these two flags
-    // let the user veto the bend-range updates without affecting the
-    // MCM enable path. Placed at the end of the parameter block so the
-    // pre-existing kPid values don't shift.
+    // and RPN 0 (Pitch Bend Sensitivity) per MPE 1.0; these flags
+    // let the user veto each auto-config axis independently. Placed
+    // at the end of the parameter block so the pre-existing kPid
+    // values don't shift.
+    // - kPidMPEMasterBendIgnoreRpn / kPidMPEPerNoteBendIgnoreRpn:
+    //   pin the wrapper-side bend ranges against incoming RPN 0.
+    // - kPidMPEIgnoreMcm: pin kPidMPEEnabled against incoming RPN 6
+    //   (MCM). When set, wrapper re-asserts its mpeEnabled value into
+    //   the engine on any engine-driven flip. Spec-permitted opt-out
+    //   per MPE 1.0 Appendix A.1.
     kPidMPEMasterBendIgnoreRpn,
     kPidMPEPerNoteBendIgnoreRpn,
+    kPidMPEIgnoreMcm,
 
     // Read-only mirrors of the engine's effective bend ranges (after
     // RPN / override resolution) and "has any RPN been received?" flags.
@@ -134,6 +141,8 @@ struct SfizzRange {
         case kPidMPEMasterBendIgnoreRpn:
             return {0.0, 0.0, 1.0};
         case kPidMPEPerNoteBendIgnoreRpn:
+            return {0.0, 0.0, 1.0};
+        case kPidMPEIgnoreMcm:
             return {0.0, 0.0, 1.0};
         case kPidMPEMasterEffectiveBendRange:
             return {2.0, 0.0, 96.0};
